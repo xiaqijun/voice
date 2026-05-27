@@ -1,0 +1,33 @@
+# 敏感配置 (含API密钥)
+config.py
+
+# 克隆音色数据
+voices/
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# 虚拟环境
+.venv
+venv/
+env/
+
+# 临时音频
+*.wav
+*.mp3
+tmp/
+*.tmp
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 系统
+.DS_Store
+Thumbs.db

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiMo 语音聊天机器人</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f0f13;--surface:#1a1a24;--surface2:#242436;--border:#2e2e44;--text:#e8e8f0;--text2:#9090a8;--accent:#6c5ce7;--accent2:#a29bfe;--green:#00b894;--red:#ff6b6b;--yellow:#fdcb6e;--radius:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+header h1{font-size:18px;font-weight:600}
+header .badge{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--accent);color:#fff}
+header .badge.offline{background:var(--red)}
+.container{display:flex;flex:1;overflow:hidden}
+.chat-area{flex:1;display:flex;flex-direction:column}
+.messages{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:75%;padding:12px 16px;border-radius:var(--radius);line-height:1.6;font-size:14px;animation:fadeIn .2s}
+.msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--surface2);border-bottom-left-radius:4px}
+.msg.system{align-self:center;background:transparent;color:var(--text2);font-size:12px;padding:4px 0}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.input-bar{padding:16px 24px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end}
+.input-bar textarea{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:12px 14px;font-size:14px;resize:none;outline:none;font-family:inherit;min-height:44px;max-height:120px;line-height:1.5}
+.input-bar textarea:focus{border-color:var(--accent)}
+.input-bar textarea::placeholder{color:var(--text2)}
+.btn{border:none;border-radius:var(--radius);cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff;padding:0 20px;height:44px}
+.btn-primary:hover{background:var(--accent2)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{height:32px;padding:0 12px;font-size:12px}
+.btn-icon{width:44px;height:44px;background:var(--surface2);color:var(--text);border:1px solid var(--border);font-size:18px}
+.btn-icon:hover{background:var(--border)}
+.btn-icon.recording{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1s infinite}
+.btn-ghost{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:14px}
+.btn-ghost:hover{color:var(--yellow)}
+.btn-danger{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:12px}
+.btn-danger:hover{color:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.sidebar{width:300px;background:var(--surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.sidebar h3{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px}
+.field select,.field input[type="text"],.field input[type="file"]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font-size:13px;outline:none;font-family:inherit}
+.field select:focus,.field input:focus{border-color:var(--accent)}
+.field input[type="file"]{padding:8px;cursor:pointer}
+.field input[type="file"]::file-selector-button{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;margin-right:8px;font-size:12px}
+.voice-list{display:flex;flex-direction:column;gap:4px}
+.voice-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.voice-item:hover{background:var(--surface2)}
+.voice-item.active{border-color:var(--accent);background:rgba(108,92,231,.1)}
+.voice-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.voice-item .v-info{flex:1;min-width:0}
+.voice-item .v-name{font-size:13px;font-weight:500}
+.voice-item .v-meta{font-size:11px;color:var(--text2)}
+.voice-item .v-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.voice-item:hover .v-actions{opacity:1}
+.voice-section{margin-bottom:4px}
+.voice-section-title{font-size:11px;color:var(--text2);padding:4px 12px;text-transform:uppercase;letter-spacing:.5px}
+.typing{display:flex;gap:4px;padding:12px 16px;align-self:flex-start}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--text2);animation:bounce .6s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}
+.clone-save{display:flex;gap:6px;margin-top:8px}
+.clone-save input{flex:1}
+@media(max-width:768px){.sidebar{display:none}.msg{max-width:90%}}
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/></svg>
+  <h1>MiMo 语音聊天</h1>
+  {% if api_ready %}
+  <span class="badge">API 已连接</span>
+  {% else %}
+  <span class="badge offline">未配置 API</span>
+  {% endif %}
+</header>
+
+<div class="container">
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="msg system">欢迎使用小米MiMo语音聊天机器人，输入消息开始对话</div>
+    </div>
+    <div class="input-bar">
+      <button class="btn btn-icon" id="btnRecord" title="录音">&#127908;</button>
+      <textarea id="inputText" rows="1" placeholder="输入消息... (Enter发送，Shift+Enter换行)"></textarea>
+      <button class="btn btn-primary" id="btnSend">发送</button>
+      <button class="btn btn-icon" id="btnClear" title="清除对话">&#128465;</button>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <!-- 音色选择 -->
+    <div>
+      <h3>音色选择</h3>
+      <div class="voice-list" id="voiceList">
+        <!-- 内置音色 -->
+        <div class="voice-section">
+          <div class="voice-section-title">内置音色</div>
+          {% for v in voices %}
+          {% if v.type == 'builtin' %}
+          <div class="voice-item {% if v.id == default_voice %}active{% endif %}" data-voice="{{ v.id }}" data-type="builtin">
+            <div class="dot" style="background:{% if v.gender == '女' %}var(--accent2){% else %}var(--green){% endif %}"></div>
+            <div class="v-info">
+              <div class="v-name">{{ v.name }}</div>
+              <div class="v-meta">{{ v.lang }} · {{ v.gender }}</div>
+            </div>
+            <div class="v-actions">
+              <button class="btn-ghost" onclick="setDefault('{{ v.id }}')" title="设为默认">&#9733;</button>
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <!-- 克隆音色 -->
+        <div class="voice-section">
+          <div class="voice-section-title">克隆音色</div>
+          <div id="cloneVoiceList">
+            {% for v in voices %}
+            {% if v.type == 'clone' %}
+            <div class="voice-item {% if v.id == default_voice %}active{% endif %}" data-voice="{{ v.id }}" data-type="clone">
+              <div class="dot" style="background:var(--yellow)"></div>
+              <div class="v-info">
+                <div class="v-name">{{ v.name }}</div>
+                <div class="v-meta">克隆音色</div>
+              </div>
+              <div class="v-actions">
+                <button class="btn-ghost" onclick="setDefault('{{ v.id }}')" title="设为默认">&#9733;</button>
+                <button class="btn-danger" onclick="deleteClone('{{ v.id }}')" title="删除">&#10005;</button>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          <div class="msg system" id="noClone" style="{% if voices|selectattr('type','equalto','clone')|list|length > 0 %}display:none{% endif %}">暂无克隆音色</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 风格控制 -->
+    <div>
+      <h3>风格控制</h3>
+      <div class="field">
+        <input type="text" id="inputStyle" placeholder="如：温柔、慵懒的语气">
+      </div>
+    </div>
+
+    <!-- 声音克隆 -->
+    <div>
+      <h3>声音克隆</h3>
+      <div class="field">
+        <label>上传参考音频 (mp3/wav)</label>
+        <input type="file" id="cloneFile" accept=".mp3,.wav">
+      </div>
+      <div class="clone-save">
+        <input type="text" id="cloneName" placeholder="音色名称" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:13px;outline:none">
+        <button class="btn btn-primary btn-sm" id="btnSaveClone">保存</button>
+      </div>
+      <div style="margin-top:8px">
+        <button class="btn btn-primary" id="btnClone" style="width:100%;height:38px;font-size:13px">临时试听克隆</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const messages = $('#messages');
+const inputText = $('#inputText');
+const inputStyle = $('#inputStyle');
+let currentVoice = '{{ default_voice }}';
+let isSending = false;
+
+// ---- 音色选择 ----
+$('#voiceList').addEventListener('click', e => {
+  const item = e.target.closest('.voice-item');
+  if (!item || e.target.closest('.v-actions')) return;
+  $$('.voice-item').forEach(v => v.classList.remove('active'));
+  item.classList.add('active');
+  currentVoice = item.dataset.voice;
+});
+
+async function setDefault(voiceId) {
+  try {
+    const res = await fetch('/api/voices/default', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({voice_id: voiceId})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      currentVoice = voiceId;
+      $$('.voice-item').forEach(v => v.classList.remove('active'));
+      const target = document.querySelector(`.voice-item[data-voice="${voiceId}"]`);
+      if (target) target.classList.add('active');
+      addMsg('已将 "' + voiceId + '" 设为默认音色', 'system');
+    }
+  } catch (err) {
+    addMsg('设置默认音色失败: ' + err.message, 'system');
+  }
+}
+
+async function deleteClone(voiceId) {
+  if (!confirm('确定删除此克隆音色？')) return;
+  try {
+    const res = await fetch('/api/voices/clone/' + voiceId, {method: 'DELETE'});
+    const data = await res.json();
+    if (data.ok) {
+      const el = document.querySelector(`.voice-item[data-voice="${voiceId}"]`);
+      if (el) el.remove();
+      if (currentVoice === voiceId) currentVoice = '冰糖';
+      // 检查是否还有克隆音色
+      const remaining = document.querySelectorAll('#cloneVoiceList .voice-item');
+      if (remaining.length === 0) $('#noClone').style.display = '';
+      addMsg('克隆音色已删除', 'system');
+    }
+  } catch (err) {
+    addMsg('删除失败: ' + err.message, 'system');
+  }
+}
+
+// ---- 保存克隆音色 ----
+$('#btnSaveClone').addEventListener('click', async () => {
+  const file = $('#cloneFile').files[0];
+  const name = $('#cloneName').value.trim();
+  if (!file) { addMsg('请先上传参考音频', 'system'); return; }
+  if (!name) { addMsg('请输入音色名称', 'system'); return; }
+
+  const form = new FormData();
+  form.append('voice_file', file);
+  form.append('name', name);
+
+  try {
+    const res = await fetch('/api/voices/clone', {method: 'POST', body: form});
+    const data = await res.json();
+    if (data.ok) {
+      // 添加到列表
+      $('#noClone').style.display = 'none';
+      const div = document.createElement('div');
+      div.className = 'voice-item';
+      div.dataset.voice = data.id;
+      div.dataset.type = 'clone';
+      div.innerHTML = `
+        <div class="dot" style="background:var(--yellow)"></div>
+        <div class="v-info">
+          <div class="v-name">${data.name}</div>
+          <div class="v-meta">克隆音色</div>
+        </div>
+        <div class="v-actions">
+          <button class="btn-ghost" onclick="setDefault('${data.id}')" title="设为默认">&#9733;</button>
+          <button class="btn-danger" onclick="deleteClone('${data.id}')" title="删除">&#10005;</button>
+        </div>
+      `;
+      $('#cloneVoiceList').appendChild(div);
+      $('#cloneName').value = '';
+      $('#cloneFile').value = '';
+      addMsg('音色 "' + name + '" 已保存，点击可选中使用', 'system');
+    } else {
+      addMsg('保存失败: ' + data.error, 'system');
+    }
+  } catch (err) {
+    addMsg('保存失败: ' + err.message, 'system');
+  }
+});
+
+// ---- 文本输入 ----
+inputText.addEventListener('input', () => {
+  inputText.style.height = 'auto';
+  inputText.style.height = Math.min(inputText.scrollHeight, 120) + 'px';
+});
+
+inputText.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    $('#btnSend').click();
+  }
+});
+
+// ---- 消息 ----
+function addMsg(text, role) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function addTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+function playAudio(url) {
+  const audio = new Audio(url);
+  audio.play().catch(() => {});
+}
+
+// ---- 发送 ----
+async function sendMessage(text, cloneFile) {
+  if (isSending || (!text && !cloneFile)) return;
+  isSending = true;
+  $('#btnSend').disabled = true;
+
+  if (text) addMsg(text, 'user');
+  else addMsg('[声音克隆] ' + (inputStyle.value || '临时试听'), 'user');
+
+  addTyping();
+
+  try {
+    let reply;
+    if (text) {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: text})
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      reply = data.reply;
+    } else {
+      reply = text || '';
+    }
+
+    removeTyping();
+    if (reply) addMsg(reply, 'bot');
+
+    const style = inputStyle.value.trim();
+    let ttsRes;
+    if (cloneFile) {
+      const form = new FormData();
+      form.append('text', reply || inputText.value.trim());
+      form.append('style', style);
+      form.append('voice_file', cloneFile);
+      ttsRes = await fetch('/api/tts/clone', {method: 'POST', body: form});
+    } else {
+      ttsRes = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: reply, voice: currentVoice, style})
+      });
+    }
+    if (ttsRes && ttsRes.ok) {
+      const blob = await ttsRes.blob();
+      playAudio(URL.createObjectURL(blob));
+    }
+  } catch (err) {
+    removeTyping();
+    addMsg('错误: ' + err.message, 'system');
+  }
+
+  isSending = false;
+  $('#btnSend').disabled = false;
+}
+
+$('#btnSend').addEventListener('click', () => {
+  const text = inputText.value.trim();
+  if (!text) return;
+  inputText.value = '';
+  inputText.style.height = 'auto';
+  sendMessage(text, null);
+});
+
+$('#btnClone').addEventListener('click', () => {
+  const file = $('#cloneFile').files[0];
+  if (!file) { addMsg('请先上传参考音频文件', 'system'); return; }
+  const text = inputText.value.trim();
+  if (!text) { addMsg('请输入要合成的文本', 'system'); return; }
+  inputText.value = '';
+  inputText.style.height = 'auto';
+  sendMessage('', file);
+});
+
+$('#btnClear').addEventListener('click', async () => {
+  await fetch('/api/clear', {method: 'POST'});
+  messages.innerHTML = '<div class="msg system">对话已清除</div>';
+});
+
+// ---- 录音 ----
+let mediaRecorder = null;
+let audioChunks = [];
+$('#btnRecord').addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    $('#btnRecord').classList.remove('recording');
+    $('#btnRecord').innerHTML = '&#127908;';
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      addMsg('[录音完成] 语音识别功能待接入', 'system');
+    };
+    mediaRecorder.start();
+    $('#btnRecord').classList.add('recording');
+    $('#btnRecord').innerHTML = '&#9724;';
+  } catch (err) {
+    addMsg('无法访问麦克风: ' + err.message, 'system');
+  }
+});
+</script>
+</body>
+</html>

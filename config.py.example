@@ -1,0 +1,21 @@
+"""小米MiMo Token Plan API 配置"""
+
+# 小米MiMo平台API密钥
+# 获取方式: https://platform.xiaomimimo.com/#/console/api-keys
+MIMO_API_KEY = "your_api_key_here"
+
+# API基础地址 (OpenAI兼容格式)
+MIMO_BASE_URL = "https://api.xiaomimimo.com/v1"
+
+# TTS配置
+TTS_MODEL = "mimo-v2.5-tts"
+TTS_CLONE_MODEL = "mimo-v2.5-tts-voiceclone"
+# 可选音色: mimo_default, 冰糖, 茉莉, 苏打, 白桦, Mia, Chloe, Milo, Dean
+TTS_VOICE = "冰糖"
+TTS_FORMAT = "wav"  # wav (非流式) 或 pcm16 (流式)
+
+# Chat对话配置
+CHAT_MODEL = "mimo-v2.5-pro"
+
+# 音频配置
+SAMPLE_RATE = 24000  # MiMo TTS输出采样率24kHz

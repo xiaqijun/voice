@@ -1,5 +1,6 @@
-# 敏感配置 (含API密钥)
+# 敏感配置 (含API密钥/密码)
 config.py
+deploy.py
 
 # 克隆音色数据
 voices/
@@ -16,6 +17,10 @@ wheels/
 .venv
 venv/
 env/
+
+# uv
+.python-version
+uv.lock
 
 # 临时音频
 *.wav

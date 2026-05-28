@@ -512,6 +512,13 @@ $('#btnRecord').addEventListener('click', async () => {
     $('#btnRecord').innerHTML = '&#127908;';
     return;
   }
+
+  // 检查浏览器是否支持
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    addMsg('浏览器不支持录音。请确保使用 Chrome/Edge，并通过 http://localhost:5000 访问（不能用 IP 地址）', 'system');
+    return;
+  }
+
   try {
     const stream = await navigator.mediaDevices.getUserMedia({audio: true});
     mediaRecorder = new MediaRecorder(stream);
@@ -519,13 +526,21 @@ $('#btnRecord').addEventListener('click', async () => {
     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
     mediaRecorder.onstop = () => {
       stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(audioChunks, {type: 'audio/webm'});
+      const url = URL.createObjectURL(blob);
       addMsg('[录音完成] 语音识别功能待接入', 'system');
     };
     mediaRecorder.start();
     $('#btnRecord').classList.add('recording');
     $('#btnRecord').innerHTML = '&#9724;';
   } catch (err) {
-    addMsg('无法访问麦克风: ' + err.message, 'system');
+    if (err.name === 'NotAllowedError') {
+      addMsg('麦克风权限被拒绝。请点击浏览器地址栏的锁图标，允许麦克风权限后重试。', 'system');
+    } else if (err.name === 'NotFoundError') {
+      addMsg('未检测到麦克风设备。请检查麦克风是否已连接。', 'system');
+    } else {
+      addMsg('无法访问麦克风: ' + err.message + '。请确保通过 http://localhost:5000 访问页面。', 'system');
+    }
   }
 });
 </script>

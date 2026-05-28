@@ -1,46 +1,46 @@
 ---
 name: tts-style-generator
-description: Use when generating TTS voice output, writing voice style tags, designing voice personas, cloning voices, or describing voice characteristics for MiMo-V2.5-TTS
+description: 当需要为MiMo-V2.5-TTS生成语音风格标签、设计声音人设、克隆音色、或优化语音文案时使用
 ---
 
-# TTS Style Generator
+# TTS 风格控制
 
-## Overview
+## 概述
 
-Three-layer knowledge for MiMo TTS voice control: **tag system** (what to write) → **voice design** (how to describe) → **text craft** (how to write for speech).
+三套知识体系融合：小米MiMo官方TTS文档 + 《语音与语言表演艺术实战教程》 + 《数字人声音声线设计教程》。覆盖标签体系、声线设计、文案写作三个层面。
 
-## When to Use
+## 适用场景
 
-- Writing emotion/style tags for TTS synthesis
-- Designing voice descriptions for VoiceDesign model
-- Optimizing text for natural speech output
-- Switching between voice personas (御姐/少年/萝莉/叔音)
+- 为TTS合成编写情绪/风格标签
+- 用声音设计模型描述目标音色
+- 优化文本使其更适合语音播报
+- 切换不同角色声线（御姐/少年/萝莉/叔音）
 
-## Quick Reference: Tag System
+## 快速参考：标签体系
 
-### Overall Style Tags (beginning of text)
+### 整体风格标签（文本开头）
 
-| Category | Tags |
-|----------|------|
-| Basic Emotion | 开心, 悲伤, 生气, 害怕, 惊讶, 兴奋, 委屈, 平静, 冷淡 |
-| Complex Emotion | 忧郁, 释然, 无奈, 愧疚, 嫉妒, 疲惫, 不安, 感性 |
-| Tone | 温柔, 冷淡, 活泼, 严肃, 慵懒, 调皮, 低沉, 干练, 尖锐 |
-| Timbre | 磁性, 醇厚, 清亮, 空灵, 稚嫩, 苍老, 甜美, 沙哑, 优雅 |
-| Character | 夹子音, 大姐姐音, 正太音, 大叔音, 台湾腔 |
-| Dialect | 东北话, 四川话, 河南话, 粤语 |
-| Role-play | Any character name (孙悟空, 林黛玉, etc.) |
-| Singing | 唱歌, sing, singing |
+| 类别 | 可用标签 |
+|------|---------|
+| 基础情绪 | 开心, 悲伤, 生气, 害怕, 惊讶, 兴奋, 委屈, 平静, 冷淡 |
+| 复合情绪 | 忧郁, 释然, 无奈, 愧疚, 嫉妒, 疲惫, 不安, 感性 |
+| 整体语调 | 温柔, 冷淡, 活泼, 严肃, 慵懒, 调皮, 低沉, 干练, 尖锐 |
+| 音色定位 | 磁性, 醇厚, 清亮, 空灵, 稚嫩, 苍老, 甜美, 沙哑, 优雅 |
+| 角色语态 | 夹子音, 大姐姐音, 正太音, 大叔音, 台湾腔 |
+| 方言 | 东北话, 四川话, 河南话, 粤语 |
+| 角色扮演 | 任意角色名（孙悟空、林黛玉等） |
+| 唱歌 | 唱歌, sing, singing |
 
-### Inline Tags (middle of text)
+### 行内精细标签（文本中间插入）
 
-| Category | Tags |
-|----------|------|
-| Pace | 深吸一口气, 深呼吸, 叹气, 长叹一声, 喘气, 屏息, 停顿, 语速加快, 语速放慢, 急促 |
-| Emotion | 紧张, 害怕, 兴奋, 疲惫, 委屈, 撒娇, 愧疚, 震惊, 不耐烦, 无奈, 担心 |
-| Voice | 颤抖, 声音发颤, 声调变化, 破音, 鼻音, 气声, 沙哑, 提高嗓门, 低声, 轻声 |
-| Laugh/Cry | 微笑, 轻笑, 大笑, 冷笑, 抽泣, 呜咽, 哽咽, 嚎啕大哭, 苦笑, 强颜欢笑 |
+| 类别 | 可用标签 |
+|------|---------|
+| 语速节奏 | 深吸一口气, 深呼吸, 叹气, 长叹一声, 喘气, 屏息, 停顿, 语速加快, 语速放慢, 急促 |
+| 情绪状态 | 紧张, 害怕, 兴奋, 疲惫, 委屈, 撒娇, 愧疚, 震惊, 不耐烦, 无奈, 担心 |
+| 语音特征 | 颤抖, 声音发颤, 声调变化, 破音, 鼻音, 气声, 沙哑, 提高嗓门, 低声, 轻声 |
+| 笑与哭 | 微笑, 轻笑, 大笑, 冷笑, 抽泣, 呜咽, 哽咽, 嚎啕大哭, 苦笑, 强颜欢笑 |
 
-### Tag Format
+### 标签格式
 
 ```text
 (标签)文本内容。
@@ -48,93 +48,111 @@ Three-layer knowledge for MiMo TTS voice control: **tag system** (what to write)
 (标签)第一句。(标签)第二句。每句独立标签。
 ```
 
-## Voice Persona Quick Map
+## 声线变体速查
 
-| Persona | Spectrum | Key Tags |
-|---------|----------|----------|
-| 御姐 | Low freq full + mid-high sharp | (磁性) (沉稳) (大姐姐音) |
-| 少年 | Low cut + mid-high strong | (活泼) (清脆) (正太音) |
-| 萝莉 | Nasal 800Hz-1.5kHz | (可爱) (撒娇) (夹子音) |
-| 叔音 | Chest 80-150Hz + air | (低沉) (沧桑) (大叔音) |
-| 青年 | Balanced | (自然) (阳光) (自信) |
+| 声线 | 频谱特征 | 核心标签 |
+|------|---------|---------|
+| 御姐 | 低频饱满 + 中高频锐利 | (磁性) (沉稳) (大姐姐音) |
+| 少年 | 低频切除 + 中高频穿透 | (活泼) (清脆) (正太音) |
+| 萝莉 | 鼻音区保留萌感 | (可爱) (撒娇) (夹子音) |
+| 叔音 | 胸腔能量 + 高频空气感 | (低沉) (沧桑) (大叔音) |
+| 青年 | 均衡 | (自然) (阳光) (自信) |
 
-## Emotion-Pace-Resonance Map
+## 情绪-语速-共鸣映射
 
-| Emotion | Pace | Pitch | Power | Resonance | Tags |
-|---------|------|-------|-------|-----------|------|
-| Happy | Fast | High | Hard | Mouth front | 兴奋, 开心, 活泼 |
-| Sad | Slow | Low | Breath | Chest | 悲伤, 叹气, 低沉 |
-| Angry | Fast | High | Strong | Mouth+Nasal | 生气, 愤怒, 严肃 |
-| Gentle | Slow | Mid-low | Soft | Chest | 温柔, 轻柔, 温暖 |
-| Nervous | Fast | High | Tremble | Nasal | 紧张, 害怕, 颤抖 |
-| Cold | Mid-slow | Mid-low | Weak | Mouth | 冷淡, 平静, 无所谓 |
-| Lazy | Slow | Low | Weak | Chest | 慵懒, 随意, 有气无力 |
-| Playful | Fast | High | Bouncy | Mouth front | 活泼, 俏皮, 调皮 |
-| Serious | Slow | Mid-low | Steady | Chest | 严肃, 郑重, 干练 |
-| Magnetic | Slow | Low | Breath | Chest | 磁性, 低语, 气声 |
+| 情绪 | 语速 | 音调 | 力度 | 共鸣 | 标签 |
+|------|------|------|------|------|------|
+| 开心/兴奋 | 快 | 高 | 实声 | 口腔前部 | 兴奋, 开心, 活泼 |
+| 悲伤/失落 | 慢 | 低 | 气声 | 胸腔 | 悲伤, 叹气, 低沉 |
+| 生气/愤怒 | 快 | 高 | 强实声 | 口腔+鼻腔 | 生气, 愤怒, 严肃 |
+| 温柔/安慰 | 慢 | 中低 | 柔 | 胸腔 | 温柔, 轻柔, 温暖 |
+| 紧张/害怕 | 快 | 高 | 颤 | 鼻腔 | 紧张, 害怕, 颤抖 |
+| 冷淡/漠然 | 中慢 | 中低 | 弱 | 口腔 | 冷淡, 平静, 无所谓 |
+| 慵懒/随意 | 慢 | 低 | 弱 | 胸腔 | 慵懒, 随意, 有气无力 |
+| 活泼/俏皮 | 快 | 高 | 跳跃 | 口腔前部 | 活泼, 俏皮, 调皮 |
+| 严肃/郑重 | 慢 | 中低 | 沉稳 | 胸腔 | 严肃, 郑重, 干练 |
+| 磁性/低语 | 慢 | 低 | 气声 | 胸腔 | 磁性, 低语, 气声 |
 
-## Voice Design Description
+## 声音设计描述
 
-For `mimo-v2.5-tts-voicedesign` model, describe voice in 1-4 sentences covering:
+使用 `mimo-v2.5-tts-voicedesign` 模型时，1-4句话描述声音：
 
-| Dimension | Example |
-|-----------|---------|
-| Gender/Age | 年轻女性、中年男性 |
-| Timbre | 温柔甜美、低沉磁性、沙哑沧桑 |
-| Emotion | 温暖亲切、冷淡疏离 |
-| Pace | 语速稍慢、说话很快 |
-| Role | 温柔的护士、深夜电台主播 |
-| Style | 轻声细语、字正腔圆 |
+| 维度 | 示例 |
+|------|------|
+| 性别与年龄 | 年轻女性、中年男性 |
+| 音色质感 | 温柔甜美、低沉磁性、沙哑沧桑 |
+| 情绪基调 | 温暖亲切、冷淡疏离 |
+| 语速节奏 | 语速稍慢、说话很快 |
+| 角色身份 | 温柔的护士、深夜电台主播 |
+| 说话风格 | 轻声细语、字正腔圆 |
 
-Good examples:
+好的描述：
 - `年轻女性，温柔甜美的声音，语速稍慢，像朋友在耳边轻声聊天`
 - `中年男性，低沉磁性的嗓音，带有轻微颗粒感，像深夜电台主播`
 
-## Voice Clone Tips
+## 声音克隆要点
 
-- Reference audio: 10-30s, clear, no noise, mp3/wav
-- Style tags still work after cloning: `(温柔)晚安。`
-- Background noise in reference will be cloned too
+- 参考音频：10-30秒，清晰无噪音，mp3/wav
+- 克隆后仍可用标签控制风格：`(温柔)晚安。`
+- 背景噪音会被一起克隆
 
-## Text Craft for TTS
+## 语音文案写作
 
-### Punctuation Effects
+### 标点对语气的影响
 
-| Mark | Effect |
-|------|--------|
-| `。` | Normal pause, falling tone |
-| `！` | Emphasis, rising tone |
-| `？` | Question, rising end |
-| `...` | Hesitation, trailing off |
-| `——` | Emphasis, elongation |
-| `～` | Playful, cute, elongated |
+| 标点 | 效果 | 示例 |
+|------|------|------|
+| `。` | 正常停顿，语调下沉 | 今天天气不错。 |
+| `！` | 语气加重，语调上扬 | 太棒了！ |
+| `？` | 疑问语调，尾音上扬 | 你确定吗？ |
+| `...` | 拖音、犹豫、留白 | 我...我不知道。 |
+| `——` | 转折、强调、拉长音 | 这件事——说来话长。 |
+| `～` | 语气轻松、撒娇、拉长 | 好的～ |
 
-### Writing Rules
+### 写作原则
 
-1. **Short sentences, spoken style** — 大家多穿点，别感冒了 (not 请各位同事注意添衣保暖)
-2. **Concrete words** — 又甜又脆 (not 非常好)
-3. **Filler words** — 嗯、呀、哎、哈哈 for naturalness
-4. **Punctuation rhythm** — 省略号 for hesitation, 破折号 for emphasis
-5. **Numbers to text** — 100 → 一百, 2024 → 二零二四
-6. **Break long sentences** — Max ~30 chars per sentence
+1. **短句口语化** — 大家多穿点，别感冒了（不是：请各位同事注意添衣保暖）
+2. **具体词代替抽象词** — 又甜又脆（不是：非常好）
+3. **善用语气词** — 嗯、呀、哎、哈哈
+4. **省略号制造节奏** — 我本来想说...算了，不说了
+5. **数字转文字** — 100 → 一百，2024 → 二零二四
+6. **长句断开** — 超过30字用逗号断句
 
-## Common Mistakes
+### 标签与文案配合
 
-| Mistake | Fix |
-|---------|-----|
-| Same emotion for every sentence | Vary tags per sentence |
-| All fast or all slow pace | Alternate fast/slow for rhythm |
-| No breathing/pauses | Add (停顿) or (叹气) at transitions |
-| Formal written style | Use spoken, casual language |
-| Contradicting voice description | Don't pair childish voice + CEO aura |
-| Nested tags | Keep tags flat, no nesting |
-| Vague descriptions | Avoid "普通", "正常", "外国口音" |
+```text
+# 整体风格
+(温柔)你好呀，好久不见。
 
-## Expression Principles
+# 行内控制
+你好...(停顿)(温柔)好久不见了。
 
-1. **Match emotion to content** — comfort = gentle, congratulations = excited
-2. **Rhythm variation** — key info slow, transitions normal, excitement fast
-3. **Breathing space** — add (深呼吸) or (停顿) at emotional transitions
-4. **Punchline timing** — (停顿) before joke punchline, then (大笑)
-5. **Mixed emotions** — try "温柔但疲惫", "带泪的微笑"
-6. **Director mode** — complex scenes use Character + Scene + Guidance
+# 多标签组合
+(温柔 低语)嘘...(轻声)别说话。
+
+# 角色切换
+(旁白 平静)那天晚上...(小女孩 害怕)妈妈，我怕。
+
+# 渐进情绪
+(平静)嗯，我听到了。(无奈)唉...又是这样。(疲惫)我真的好累。
+```
+
+## 常见错误
+
+| 错误 | 修正 |
+|------|------|
+| 每句都用同一个情绪 | 每句独立标签，情绪自然变化 |
+| 全程一个语速 | 快慢交替，关键处放慢 |
+| 没有呼吸/停顿 | 情绪转折处加(停顿)或(叹气) |
+| 书面语正式文体 | 用口语化短句 |
+| 标签嵌套 | 保持扁平，不要嵌套 |
+| 模糊描述 | 避免"普通"、"正常"等模糊词 |
+
+## 表达原则
+
+1. **情绪匹配** — 安慰用温柔，祝贺用兴奋
+2. **节奏变化** — 关键信息放慢，兴奋时加快
+3. **呼吸留白** — 情绪转折处加(深呼吸)或(停顿)
+4. **包袱节奏** — (停顿)制造悬念，然后(大笑)抖包袱
+5. **多情绪混合** — "温柔但疲惫"、"带泪的微笑"
+6. **导演模式** — 复杂场景用角色+场景+指导三维度

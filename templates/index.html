@@ -431,7 +431,7 @@ $('#btnClear').addEventListener('click', async () => {
   messages.innerHTML = '<div class="msg system">对话已清除</div>';
 });
 
-// ---- 录音 ----
+// ---- 录音 + ASR ----
 let mediaRecorder = null;
 let audioChunks = [];
 $('#btnRecord').addEventListener('click', async () => {
@@ -450,9 +450,33 @@ $('#btnRecord').addEventListener('click', async () => {
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
-      addMsg('[录音完成] 语音识别功能待接入', 'system');
+      const blob = new Blob(audioChunks, {type: mediaRecorder.mimeType});
+      addMsg('[录音完成] 正在识别...', 'system');
+
+      const form = new FormData();
+      form.append('audio', blob, 'recording.webm');
+
+      try {
+        const res = await fetch('/api/asr', {method: 'POST', body: form});
+        const data = await res.json();
+        // 移除"正在识别"提示
+        const sysMsgs = messages.querySelectorAll('.msg.system');
+        const lastSys = sysMsgs[sysMsgs.length - 1];
+        if (lastSys && lastSys.textContent.includes('正在识别')) lastSys.remove();
+
+        if (data.text) {
+          inputText.value = data.text;
+          inputText.style.height = 'auto';
+          inputText.style.height = Math.min(inputText.scrollHeight, 100) + 'px';
+          addMsg('识别: ' + data.text, 'system');
+        } else {
+          addMsg('识别失败: ' + (data.error || '未识别到内容'), 'system');
+        }
+      } catch (err) {
+        addMsg('识别请求失败: ' + err.message, 'system');
+      }
     };
     mediaRecorder.start();
     $('#btnRecord').classList.add('recording');

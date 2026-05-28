@@ -3,8 +3,10 @@
 import os
 import json
 import uuid
+import base64
 import tempfile
 from flask import Flask, render_template, request, jsonify, send_file
+from openai import OpenAI
 from xiaomi_tts import XiaomiTTS
 from chat_bot import ChatBot, SimpleChatBot
 import config
@@ -290,6 +292,55 @@ def save_design_voice():
     _save_clone_voices(clones)
 
     return jsonify({"ok": True, "id": voice_id, "name": name})
+
+
+@app.route("/api/asr", methods=["POST"])
+def api_asr():
+    """语音识别: 将录音转为文字 (使用 mimo-v2.5 音频理解)"""
+    if not tts:
+        return jsonify({"error": "API未配置"}), 500
+
+    audio_file = request.files.get("audio")
+    if not audio_file:
+        return jsonify({"error": "未提供音频"}), 400
+
+    # 读取音频并转为 base64
+    audio_bytes = audio_file.read()
+    ext = os.path.splitext(audio_file.filename)[1].lower() if audio_file.filename else ".webm"
+    mime_map = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".webm": "audio/webm", ".ogg": "audio/ogg"}
+    mime = mime_map.get(ext, "audio/webm")
+    b64 = base64.b64encode(audio_bytes).decode("utf-8")
+
+    try:
+        client = OpenAI(
+            api_key=config.MIMO_API_KEY,
+            base_url=config.MIMO_BASE_URL,
+        )
+        completion = client.chat.completions.create(
+            model="mimo-v2.5",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_audio",
+                            "input_audio": {"data": f"data:{mime};base64,{b64}"}
+                        },
+                        {
+                            "type": "text",
+                            "text": "请将这段语音的内容原样转录为文字，只输出转录的文字，不要添加任何解释。"
+                        }
+                    ]
+                }
+            ],
+            max_tokens=500,
+        )
+        text = completion.choices[0].message.content
+        if not text and hasattr(completion.choices[0].message, "reasoning_content"):
+            text = completion.choices[0].message.reasoning_content
+        return jsonify({"text": text or ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/clear", methods=["POST"])

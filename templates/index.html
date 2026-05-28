@@ -115,6 +115,10 @@ header .badge.offline{background:var(--red)}
   {% else %}
   <span class="badge offline">未配置 API</span>
   {% endif %}
+  <nav style="display:flex;gap:2px;margin-left:auto;margin-right:8px">
+    <a href="/" style="padding:6px 12px;border-radius:8px;font-size:13px;text-decoration:none;background:var(--accent);color:#fff">聊天</a>
+    <a href="/voices" style="padding:6px 12px;border-radius:8px;font-size:13px;text-decoration:none;color:var(--text2)">音色</a>
+  </nav>
   <button class="btn-menu" id="btnMenu" title="设置">&#9776;</button>
 </header>
 

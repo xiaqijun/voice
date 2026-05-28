@@ -65,6 +65,17 @@ header .badge.offline{background:var(--red)}
 .clone-save{display:flex;gap:6px;margin-top:8px}
 .clone-save input{flex:1}
 
+/* 音频播放条 */
+.audio-bar{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.15);border-radius:8px;min-width:200px}
+.audio-bar .btn-play{width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.audio-bar .btn-play:hover{background:var(--accent2)}
+.audio-bar .audio-progress{flex:1;height:4px;background:rgba(255,255,255,.15);border-radius:2px;cursor:pointer;position:relative;overflow:hidden}
+.audio-bar .audio-progress .audio-fill{height:100%;background:var(--accent2);border-radius:2px;width:0%;transition:width .1s}
+.audio-bar .audio-time{font-size:11px;color:var(--text2);flex-shrink:0;min-width:36px;text-align:right}
+.msg.user .audio-bar{background:rgba(0,0,0,.12)}
+.msg.user .audio-bar .btn-play{background:rgba(255,255,255,.25)}
+.msg.user .audio-bar .audio-fill{background:rgba(255,255,255,.5)}
+
 /* 菜单按钮 */
 .btn-menu{display:none;width:36px;height:36px;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;flex-shrink:0;align-items:center;justify-content:center;border-radius:8px}
 .btn-menu:hover{background:var(--surface2)}
@@ -370,6 +381,81 @@ function addMsg(text, role, emotionTag) {
   return div;
 }
 
+// 在消息气泡中添加音频播放条
+function addAudioBar(msgDiv, audioUrl) {
+  const audio = new Audio(audioUrl);
+
+  const bar = document.createElement('div');
+  bar.className = 'audio-bar';
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-play';
+  btn.innerHTML = '&#9654;';
+
+  const progress = document.createElement('div');
+  progress.className = 'audio-progress';
+  const fill = document.createElement('div');
+  fill.className = 'audio-fill';
+  progress.appendChild(fill);
+
+  const time = document.createElement('span');
+  time.className = 'audio-time';
+  time.textContent = '0:00';
+
+  bar.appendChild(btn);
+  bar.appendChild(progress);
+  bar.appendChild(time);
+  msgDiv.appendChild(bar);
+
+  let playing = false;
+
+  btn.addEventListener('click', () => {
+    if (playing) {
+      audio.pause();
+    } else {
+      audio.play();
+    }
+  });
+
+  audio.addEventListener('play', () => {
+    playing = true;
+    btn.innerHTML = '&#10074;&#10074;';
+  });
+
+  audio.addEventListener('pause', () => {
+    playing = false;
+    btn.innerHTML = '&#9654;';
+  });
+
+  audio.addEventListener('ended', () => {
+    playing = false;
+    btn.innerHTML = '&#9654;';
+    fill.style.width = '0%';
+    time.textContent = '0:00';
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if (audio.duration) {
+      fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+      const m = Math.floor(audio.currentTime / 60);
+      const s = Math.floor(audio.currentTime % 60).toString().padStart(2, '0');
+      time.textContent = m + ':' + s;
+    }
+  });
+
+  progress.addEventListener('click', e => {
+    if (audio.duration) {
+      const rect = progress.getBoundingClientRect();
+      audio.currentTime = (e.clientX - rect.left) / rect.width * audio.duration;
+    }
+  });
+
+  // 自动播放
+  audio.play().catch(() => {});
+
+  messages.scrollTop = messages.scrollHeight;
+}
+
 function addTyping() {
   const div = document.createElement('div');
   div.className = 'typing';
@@ -382,11 +468,6 @@ function addTyping() {
 function removeTyping() {
   const el = document.getElementById('typing');
   if (el) el.remove();
-}
-
-function playAudio(url) {
-  const audio = new Audio(url);
-  audio.play().catch(() => {});
 }
 
 // ---- 发送 ----
@@ -417,9 +498,10 @@ async function sendMessage(text, cloneFile) {
 
     removeTyping();
     let ttsText = reply;
+    let msgDiv;
     if (reply) {
       const {tag, text: cleanText} = extractEmotion(reply);
-      addMsg(cleanText, 'bot', tag);
+      msgDiv = addMsg(cleanText, 'bot', tag);
       ttsText = reply;
     }
 
@@ -438,9 +520,9 @@ async function sendMessage(text, cloneFile) {
         body: JSON.stringify({text: ttsText, voice: currentVoice, style})
       });
     }
-    if (ttsRes && ttsRes.ok) {
+    if (ttsRes && ttsRes.ok && msgDiv) {
       const blob = await ttsRes.blob();
-      playAudio(URL.createObjectURL(blob));
+      addAudioBar(msgDiv, URL.createObjectURL(blob));
     }
   } catch (err) {
     removeTyping();
@@ -495,8 +577,8 @@ $('#btnDesign').addEventListener('click', async () => {
     removeTyping();
     if (res.ok) {
       const blob = await res.blob();
-      playAudio(URL.createObjectURL(blob));
-      addMsg('试听完成，满意可保存为音色', 'system');
+      const msgDiv = addMsg('[声音设计试听]', 'bot');
+      addAudioBar(msgDiv, URL.createObjectURL(blob));
     } else {
       const data = await res.json();
       addMsg('错误: ' + (data.error || '合成失败'), 'system');

@@ -10,9 +10,13 @@ MIMO_BASE_URL = "https://api.xiaomimimo.com/v1"
 # TTS配置
 TTS_MODEL = "mimo-v2.5-tts"
 TTS_CLONE_MODEL = "mimo-v2.5-tts-voiceclone"
+TTS_DESIGN_MODEL = "mimo-v2.5-tts-voicedesign"
 # 可选音色: mimo_default, 冰糖, 茉莉, 苏打, 白桦, Mia, Chloe, Milo, Dean
 TTS_VOICE = "冰糖"
 TTS_FORMAT = "wav"  # wav (非流式) 或 pcm16 (流式)
+
+# 克隆模式默认风格提示 (让声音更自然)
+CLONE_DEFAULT_STYLE = "用自然、真实的语气说话，语速适中，像平时聊天一样轻松自然"
 
 # Chat对话配置
 CHAT_MODEL = "mimo-v2.5-pro"

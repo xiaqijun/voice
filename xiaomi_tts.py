@@ -132,7 +132,7 @@ class XiaomiTTS:
         Args:
             text: 要合成的文本
             voice_path: 参考音频文件路径 (mp3/wav)
-            style: 风格控制描述 (可选)
+            style: 风格控制描述 (可选，为空时使用默认自然风格)
 
         Returns:
             WAV音频数据字节
@@ -140,8 +140,11 @@ class XiaomiTTS:
         voice_data = self._load_voice_sample(voice_path)
 
         messages = []
+        # 克隆模式下始终提供风格提示，让声音更自然
         if style:
             messages.append({"role": "user", "content": style})
+        elif hasattr(config, 'CLONE_DEFAULT_STYLE'):
+            messages.append({"role": "user", "content": config.CLONE_DEFAULT_STYLE})
         messages.append({"role": "assistant", "content": text})
 
         try:
@@ -161,6 +164,46 @@ class XiaomiTTS:
     def clone_synthesize_to_file(self, text: str, voice_path: str, output_path: str, style: str = None) -> bool:
         """声音克隆合成并保存到文件"""
         audio_data = self.clone_synthesize(text, voice_path, style)
+        if audio_data:
+            with open(output_path, "wb") as f:
+                f.write(audio_data)
+            return True
+        return False
+
+    # ---- 声音设计 (文字描述生成声音) ----
+
+    def design_synthesize(self, text: str, voice_description: str) -> Optional[bytes]:
+        """
+        声音设计合成: 通过文字描述自定义声音，无需音频样本
+
+        Args:
+            text: 要合成的文本
+            voice_description: 声音描述 (如 "年轻女性，温柔甜美的声音，语速稍慢")
+
+        Returns:
+            WAV音频数据字节
+        """
+        messages = [
+            {"role": "user", "content": voice_description},
+            {"role": "assistant", "content": text},
+        ]
+        try:
+            completion = self.client.chat.completions.create(
+                model=config.TTS_DESIGN_MODEL,
+                messages=messages,
+                audio={"format": "wav", "optimize_text_preview": True},
+            )
+            message = completion.choices[0].message
+            if hasattr(message, "audio") and message.audio:
+                return base64.b64decode(message.audio.data)
+            return None
+        except Exception as e:
+            print(f"声音设计合成失败: {e}")
+            return None
+
+    def design_synthesize_to_file(self, text: str, voice_description: str, output_path: str) -> bool:
+        """声音设计合成并保存到文件"""
+        audio_data = self.design_synthesize(text, voice_description)
         if audio_data:
             with open(output_path, "wb") as f:
                 f.write(audio_data)

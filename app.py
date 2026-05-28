@@ -46,10 +46,15 @@ def _save_clone_voices(voices):
 
 
 def _get_all_voices():
-    """获取所有音色 (内置 + 克隆)"""
+    """获取所有音色 (内置 + 克隆 + 声音设计)"""
     clones = _load_clone_voices()
-    clone_list = [{"id": v["id"], "name": v["name"], "lang": "克隆", "gender": "-", "type": "clone"} for v in clones]
-    return BUILTIN_VOICES + clone_list
+    result = list(BUILTIN_VOICES)
+    for v in clones:
+        if v.get("type") == "design":
+            result.append({"id": v["id"], "name": v["name"], "lang": "设计", "gender": "-", "type": "design"})
+        else:
+            result.append({"id": v["id"], "name": v["name"], "lang": "克隆", "gender": "-", "type": "clone"})
+    return result
 
 
 def _get_default_voice():
@@ -174,13 +179,19 @@ def api_tts():
     if not tts:
         return jsonify({"error": "API未配置"}), 500
 
-    # 判断是内置音色还是克隆音色
+    # 判断音色类型
     if voice and voice.startswith("clone_"):
         clones = _load_clone_voices()
         clone = next((v for v in clones if v["id"] == voice), None)
-        if not clone or not os.path.exists(clone["file"]):
+        if not clone or "file" not in clone or not os.path.exists(clone.get("file", "")):
             return jsonify({"error": "克隆音色不存在"}), 400
         audio = tts.clone_synthesize(text, clone["file"], style=style)
+    elif voice and voice.startswith("design_"):
+        clones = _load_clone_voices()
+        design = next((v for v in clones if v["id"] == voice), None)
+        if not design or "description" not in design:
+            return jsonify({"error": "声音设计音色不存在"}), 400
+        audio = tts.design_synthesize(text, design["description"])
     else:
         if voice:
             tts.set_voice(voice)
@@ -229,6 +240,49 @@ def api_tts_clone():
     out.write(audio)
     out.close()
     return send_file(out.name, mimetype="audio/wav", as_attachment=False, download_name="clone.wav")
+
+
+@app.route("/api/tts/design", methods=["POST"])
+def api_tts_design():
+    """声音设计: 通过文字描述生成声音"""
+    data = request.get_json()
+    text = data.get("text", "").strip()
+    description = data.get("description", "").strip()
+
+    if not text:
+        return jsonify({"error": "文本不能为空"}), 400
+    if not description:
+        return jsonify({"error": "请描述你想要的声音"}), 400
+    if not tts:
+        return jsonify({"error": "API未配置"}), 500
+
+    audio = tts.design_synthesize(text, description)
+    if not audio:
+        return jsonify({"error": "声音设计合成失败"}), 500
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    tmp.write(audio)
+    tmp.close()
+    return send_file(tmp.name, mimetype="audio/wav", as_attachment=False, download_name="design.wav")
+
+
+@app.route("/api/voices/design", methods=["POST"])
+def save_design_voice():
+    """保存声音设计为可复用音色"""
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if not name:
+        return jsonify({"error": "请输入音色名称"}), 400
+    if not description:
+        return jsonify({"error": "请描述声音"}), 400
+
+    voice_id = "design_" + uuid.uuid4().hex[:8]
+    clones = _load_clone_voices()
+    clones.append({"id": voice_id, "name": name, "description": description, "type": "design"})
+    _save_clone_voices(clones)
+
+    return jsonify({"ok": True, "id": voice_id, "name": name})
 
 
 @app.route("/api/clear", methods=["POST"])

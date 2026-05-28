@@ -108,17 +108,16 @@ header .badge.offline{background:var(--red)}
 <body>
 
 <header>
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/></svg>
+  <nav style="display:flex;gap:2px;flex-shrink:0">
+    <a href="/" style="padding:6px 12px;border-radius:8px;font-size:13px;text-decoration:none;background:var(--accent);color:#fff">聊天</a>
+    <a href="/voices" style="padding:6px 12px;border-radius:8px;font-size:13px;text-decoration:none;color:var(--text2)">音色</a>
+  </nav>
   <h1>MiMo 语音聊天</h1>
   {% if api_ready %}
   <span class="badge">API 已连接</span>
   {% else %}
   <span class="badge offline">未配置 API</span>
   {% endif %}
-  <nav style="display:flex;gap:2px;margin-left:auto;margin-right:8px">
-    <a href="/" style="padding:6px 12px;border-radius:8px;font-size:13px;text-decoration:none;background:var(--accent);color:#fff">聊天</a>
-    <a href="/voices" style="padding:6px 12px;border-radius:8px;font-size:13px;text-decoration:none;color:var(--text2)">音色</a>
-  </nav>
   <button class="btn-menu" id="btnMenu" title="设置">&#9776;</button>
 </header>
 

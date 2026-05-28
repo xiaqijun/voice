@@ -35,11 +35,15 @@ class ChatBot:
         self.model = config.CHAT_MODEL
         self.history: List[Dict] = []
 
-    def chat(self, user_message: str) -> Optional[str]:
+    def chat(self, user_message: str, voice_context: str = None) -> Optional[str]:
         """与MiMo对话"""
         self.history.append({"role": "user", "content": user_message})
 
-        messages = [{"role": "system", "content": self.SYSTEM_PROMPT}]
+        system = self.SYSTEM_PROMPT
+        if voice_context:
+            system += f"\n\n【用户语音特征】{voice_context}\n请根据用户的语气和情绪，选择相匹配的情绪标签和回复风格。"
+
+        messages = [{"role": "system", "content": system}]
         messages.extend(self.history[-10:])  # 保留最近10轮
 
         try:

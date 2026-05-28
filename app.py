@@ -166,10 +166,11 @@ def delete_clone_voice(voice_id):
 def api_chat():
     data = request.get_json()
     message = data.get("message", "").strip()
+    voice_context = data.get("voice_context", "").strip() or None
     if not message:
         return jsonify({"error": "消息不能为空"}), 400
 
-    reply = chat_bot.chat(message)
+    reply = chat_bot.chat(message, voice_context=voice_context)
     if reply is None:
         return jsonify({"error": "对话请求失败"}), 500
 
@@ -328,7 +329,15 @@ def api_asr():
                         },
                         {
                             "type": "text",
-                            "text": "请将这段语音的内容原样转录为文字，只输出转录的文字，不要添加任何解释。"
+                            "text": (
+                                "请分析这段语音，输出以下信息：\n"
+                                "1. 转录文字：原样转录语音内容\n"
+                                "2. 情绪描述：说话人的情绪状态（如开心、悲伤、生气、平静、紧张等）\n"
+                                "3. 语速节奏：语速快慢、是否有停顿（如语速较快、语速缓慢、有明显停顿等）\n"
+                                "4. 语气风格：说话的语气特点（如温柔、严肃、轻松、急促、低沉等）\n\n"
+                                "请严格按以下格式输出，不要添加其他内容：\n"
+                                "[情绪:XX, 语速:XX, 语气:XX]转录文字"
+                            )
                         }
                     ]
                 }

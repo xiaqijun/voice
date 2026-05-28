@@ -210,6 +210,7 @@ const inputText = $('#inputText');
 const inputStyle = $('#inputStyle');
 let currentVoice = '{{ default_voice }}';
 let isSending = false;
+let lastVoiceContext = ''; // ASR识别的语音特征
 
 // ---- 设置面板 ----
 const panel = $('#settingsPanel');
@@ -389,7 +390,7 @@ async function sendMessage(text) {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({message: text})
+      body: JSON.stringify({message: text, voice_context: lastVoiceContext})
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -467,10 +468,24 @@ $('#btnRecord').addEventListener('click', async () => {
         if (lastSys && lastSys.textContent.includes('正在识别')) lastSys.remove();
 
         if (data.text) {
-          inputText.value = data.text;
+          // 解析情绪描述标签: [情绪:XX, 语速:XX, 语气:XX]文字
+          const m = data.text.match(/^\[([^\]]*)\](.*)/s);
+          let cleanText = data.text;
+          let voiceContext = '';
+          if (m) {
+            voiceContext = m[1].trim();
+            cleanText = m[2].trim();
+          }
+          inputText.value = cleanText;
           inputText.style.height = 'auto';
           inputText.style.height = Math.min(inputText.scrollHeight, 100) + 'px';
-          addMsg('识别: ' + data.text, 'system');
+          if (voiceContext) {
+            lastVoiceContext = voiceContext;
+            addMsg('语音特征: ' + voiceContext, 'system');
+          } else {
+            lastVoiceContext = '';
+          }
+          addMsg('识别: ' + cleanText, 'system');
         } else {
           addMsg('识别失败: ' + (data.error || '未识别到内容'), 'system');
         }

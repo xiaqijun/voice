@@ -187,34 +187,7 @@ header .badge.offline{background:var(--red)}
     </div>
 
     <div>
-      <h3>声音克隆</h3>
-      <div class="field">
-        <label>上传参考音频 (mp3/wav)</label>
-        <input type="file" id="cloneFile" accept=".mp3,.wav">
-      </div>
-      <div class="clone-save">
-        <input type="text" id="cloneName" placeholder="音色名称" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:14px;outline:none">
-        <button class="btn btn-primary btn-sm" id="btnSaveClone">保存</button>
-      </div>
-      <div style="margin-top:8px">
-        <button class="btn btn-primary" id="btnClone" style="width:100%;height:36px;font-size:13px">临时试听克隆</button>
-      </div>
-      <div class="msg system" style="margin-top:6px;font-size:11px">建议: 10-30秒清晰音频</div>
-    </div>
-
-    <div>
-      <h3>声音设计</h3>
-      <div class="field">
-        <label>用文字描述你想要的声音</label>
-        <input type="text" id="voiceDesignDesc" placeholder="如: 年轻女性，温柔甜美">
-      </div>
-      <div class="clone-save">
-        <input type="text" id="designName" placeholder="音色名称" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:14px;outline:none">
-        <button class="btn btn-primary btn-sm" id="btnSaveDesign">保存</button>
-      </div>
-      <div style="margin-top:8px">
-        <button class="btn btn-primary" id="btnDesign" style="width:100%;height:36px;font-size:13px">试听声音设计</button>
-      </div>
+      <a href="/voices" style="display:block;text-align:center;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:13px">管理克隆 / 设计音色</a>
     </div>
   </div>
 </div>
@@ -300,49 +273,6 @@ async function deleteClone(voiceId) {
     addMsg('删除失败: ' + err.message, 'system');
   }
 }
-
-// ---- 保存克隆音色 ----
-$('#btnSaveClone').addEventListener('click', async () => {
-  const file = $('#cloneFile').files[0];
-  const name = $('#cloneName').value.trim();
-  if (!file) { addMsg('请先上传参考音频', 'system'); return; }
-  if (!name) { addMsg('请输入音色名称', 'system'); return; }
-
-  const form = new FormData();
-  form.append('voice_file', file);
-  form.append('name', name);
-
-  try {
-    const res = await fetch('/api/voices/clone', {method: 'POST', body: form});
-    const data = await res.json();
-    if (data.ok) {
-      $('#noClone').style.display = 'none';
-      const div = document.createElement('div');
-      div.className = 'voice-item';
-      div.dataset.voice = data.id;
-      div.dataset.type = 'clone';
-      div.innerHTML = `
-        <div class="dot" style="background:var(--yellow)"></div>
-        <div class="v-info">
-          <div class="v-name">${data.name}</div>
-          <div class="v-meta">克隆音色</div>
-        </div>
-        <div class="v-actions">
-          <button class="btn-ghost" onclick="setDefault('${data.id}')" title="设为默认">&#9733;</button>
-          <button class="btn-danger" onclick="deleteClone('${data.id}')" title="删除">&#10005;</button>
-        </div>
-      `;
-      $('#cloneVoiceList').appendChild(div);
-      $('#cloneName').value = '';
-      $('#cloneFile').value = '';
-      addMsg('音色 "' + name + '" 已保存', 'system');
-    } else {
-      addMsg('保存失败: ' + data.error, 'system');
-    }
-  } catch (err) {
-    addMsg('保存失败: ' + err.message, 'system');
-  }
-});
 
 // ---- 文本输入 ----
 inputText.addEventListener('input', () => {
@@ -471,13 +401,12 @@ function removeTyping() {
 }
 
 // ---- 发送 ----
-async function sendMessage(text, cloneFile) {
-  if (isSending || (!text && !cloneFile)) return;
+async function sendMessage(text) {
+  if (isSending || !text) return;
   isSending = true;
   $('#btnSend').disabled = true;
 
-  if (text) addMsg(text, 'user');
-  else addMsg('[声音克隆] ' + (inputStyle.value || '临时试听'), 'user');
+  addMsg(text, 'user');
 
   addTyping();
 
@@ -506,20 +435,11 @@ async function sendMessage(text, cloneFile) {
     }
 
     const style = inputStyle.value.trim();
-    let ttsRes;
-    if (cloneFile) {
-      const form = new FormData();
-      form.append('text', ttsText || inputText.value.trim());
-      form.append('style', style);
-      form.append('voice_file', cloneFile);
-      ttsRes = await fetch('/api/tts/clone', {method: 'POST', body: form});
-    } else {
-      ttsRes = await fetch('/api/tts', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({text: ttsText, voice: currentVoice, style})
-      });
-    }
+    const ttsRes = await fetch('/api/tts', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text: ttsText, voice: currentVoice, style})
+    });
     if (ttsRes && ttsRes.ok && msgDiv) {
       const blob = await ttsRes.blob();
       addAudioBar(msgDiv, URL.createObjectURL(blob));
@@ -538,99 +458,12 @@ $('#btnSend').addEventListener('click', () => {
   if (!text) return;
   inputText.value = '';
   inputText.style.height = 'auto';
-  sendMessage(text, null);
-});
-
-$('#btnClone').addEventListener('click', () => {
-  const file = $('#cloneFile').files[0];
-  if (!file) { addMsg('请先上传参考音频文件', 'system'); return; }
-  const text = inputText.value.trim();
-  if (!text) { addMsg('请输入要合成的文本', 'system'); return; }
-  inputText.value = '';
-  inputText.style.height = 'auto';
-  sendMessage('', file);
+  sendMessage(text);
 });
 
 $('#btnClear').addEventListener('click', async () => {
   await fetch('/api/clear', {method: 'POST'});
   messages.innerHTML = '<div class="msg system">对话已清除</div>';
-});
-
-// ---- 声音设计 ----
-$('#btnDesign').addEventListener('click', async () => {
-  const desc = $('#voiceDesignDesc').value.trim();
-  const text = inputText.value.trim();
-  if (!desc) { addMsg('请描述你想要的声音', 'system'); return; }
-  if (!text) { addMsg('请输入要合成的文本', 'system'); return; }
-
-  isSending = true;
-  $('#btnDesign').disabled = true;
-  addMsg('[声音设计] ' + desc, 'user');
-  addTyping();
-
-  try {
-    const res = await fetch('/api/tts/design', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({text, description: desc})
-    });
-    removeTyping();
-    if (res.ok) {
-      const blob = await res.blob();
-      const msgDiv = addMsg('[声音设计试听]', 'bot');
-      addAudioBar(msgDiv, URL.createObjectURL(blob));
-    } else {
-      const data = await res.json();
-      addMsg('错误: ' + (data.error || '合成失败'), 'system');
-    }
-  } catch (err) {
-    removeTyping();
-    addMsg('错误: ' + err.message, 'system');
-  }
-
-  isSending = false;
-  $('#btnDesign').disabled = false;
-});
-
-$('#btnSaveDesign').addEventListener('click', async () => {
-  const desc = $('#voiceDesignDesc').value.trim();
-  const name = $('#designName').value.trim();
-  if (!desc) { addMsg('请先填写声音描述', 'system'); return; }
-  if (!name) { addMsg('请输入音色名称', 'system'); return; }
-
-  const form = new FormData();
-  form.append('name', name);
-  form.append('description', desc);
-
-  try {
-    const res = await fetch('/api/voices/design', {method: 'POST', body: form});
-    const data = await res.json();
-    if (data.ok) {
-      $('#noClone').style.display = 'none';
-      const div = document.createElement('div');
-      div.className = 'voice-item';
-      div.dataset.voice = data.id;
-      div.dataset.type = 'design';
-      div.innerHTML = `
-        <div class="dot" style="background:var(--green)"></div>
-        <div class="v-info">
-          <div class="v-name">${data.name}</div>
-          <div class="v-meta">声音设计</div>
-        </div>
-        <div class="v-actions">
-          <button class="btn-ghost" onclick="setDefault('${data.id}')" title="设为默认">&#9733;</button>
-          <button class="btn-danger" onclick="deleteClone('${data.id}')" title="删除">&#10005;</button>
-        </div>
-      `;
-      $('#cloneVoiceList').appendChild(div);
-      $('#designName').value = '';
-      addMsg('声音设计 "' + name + '" 已保存', 'system');
-    } else {
-      addMsg('保存失败: ' + data.error, 'system');
-    }
-  } catch (err) {
-    addMsg('保存失败: ' + err.message, 'system');
-  }
 });
 
 // ---- 录音 ----

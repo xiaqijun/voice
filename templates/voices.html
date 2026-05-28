@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>音色管理 - MiMo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f0f13;--surface:#1a1a24;--surface2:#242436;--border:#2e2e44;--text:#e8e8f0;--text2:#9090a8;--accent:#6c5ce7;--accent2:#a29bfe;--green:#00b894;--red:#ff6b6b;--yellow:#fdcb6e;--radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;padding-bottom:calc(20px + var(--safe-bottom))}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+header a{color:var(--text);text-decoration:none;font-size:20px;display:flex;align-items:center}
+header h1{font-size:17px;font-weight:600}
+.container{max-width:640px;margin:0 auto;padding:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h2 .icon{font-size:18px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.field input[type="text"],.field input[type="file"]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font-size:14px;outline:none;font-family:inherit}
+.field input:focus{border-color:var(--accent)}
+.field input[type="file"]{padding:8px}
+.field input[type="file"]::file-selector-button{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;margin-right:8px;font-size:12px}
+.btn{border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn-outline:hover{background:rgba(108,92,231,.1)}
+.btn-sm{height:32px;padding:0 12px;font-size:12px}
+.btn-block{width:100%}
+.row{display:flex;gap:8px;align-items:center}
+.row input{flex:1}
+.voice-list{display:flex;flex-direction:column;gap:4px}
+.voice-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid transparent;transition:all .15s}
+.voice-item:hover{background:var(--surface2)}
+.voice-item.active{border-color:var(--accent);background:rgba(108,92,231,.1)}
+.voice-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.voice-item .v-info{flex:1;min-width:0}
+.voice-item .v-name{font-size:13px;font-weight:500}
+.voice-item .v-meta{font-size:11px;color:var(--text2)}
+.voice-item .v-actions{display:flex;gap:2px;flex-shrink:0}
+.btn-ghost{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:14px;cursor:pointer}
+.btn-ghost:hover{color:var(--yellow)}
+.btn-danger{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:12px;cursor:pointer}
+.btn-danger:hover{color:var(--red)}
+.tip{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5}
+.msg{padding:8px 12px;border-radius:8px;font-size:13px;margin-top:8px;display:none}
+.msg.ok{background:rgba(0,184,148,.1);color:var(--green);display:block}
+.msg.err{background:rgba(255,107,107,.1);color:var(--red);display:block}
+.audio-bar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:8px}
+.audio-bar .btn-play{width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.audio-bar .audio-progress{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;position:relative;overflow:hidden}
+.audio-bar .audio-progress .audio-fill{height:100%;background:var(--accent2);border-radius:2px;width:0%}
+.audio-bar .audio-time{font-size:11px;color:var(--text2);flex-shrink:0;min-width:36px;text-align:right}
+.section-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:4px 0;margin-bottom:4px}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/">&#8592;</a>
+  <h1>音色管理</h1>
+</header>
+
+<div class="container">
+  <!-- 声音克隆 -->
+  <div class="card">
+    <h2><span class="icon">&#127908;</span> 声音克隆</h2>
+    <div class="field">
+      <label>上传参考音频 (mp3/wav)</label>
+      <input type="file" id="cloneFile" accept=".mp3,.wav">
+    </div>
+    <div class="field">
+      <label>音色名称</label>
+      <div class="row">
+        <input type="text" id="cloneName" placeholder="给这个音色起个名字">
+        <button class="btn btn-primary btn-sm" id="btnSaveClone">保存</button>
+      </div>
+    </div>
+    <button class="btn btn-outline btn-block" id="btnPreviewClone">试听克隆效果</button>
+    <div class="tip">建议: 10-30秒清晰单人音频，wav格式效果更佳，语速自然、无背景噪音</div>
+    <div class="msg" id="cloneMsg"></div>
+    <div id="cloneAudio"></div>
+  </div>
+
+  <!-- 声音设计 -->
+  <div class="card">
+    <h2><span class="icon">&#9999;</span> 声音设计</h2>
+    <div class="field">
+      <label>用文字描述你想要的声音</label>
+      <input type="text" id="voiceDesc" placeholder="如: 年轻女性，温柔甜美，语速稍慢，像朋友聊天">
+    </div>
+    <div class="field">
+      <label>音色名称</label>
+      <div class="row">
+        <input type="text" id="designName" placeholder="给这个音色起个名字">
+        <button class="btn btn-primary btn-sm" id="btnSaveDesign">保存</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>试听文本</label>
+      <input type="text" id="designText" placeholder="输入要合成的文本" value="你好，很高兴认识你！">
+    </div>
+    <button class="btn btn-outline btn-block" id="btnPreviewDesign">试听声音设计</button>
+    <div class="msg" id="designMsg"></div>
+    <div id="designAudio"></div>
+  </div>
+
+  <!-- 已保存的音色 -->
+  <div class="card">
+    <h2><span class="icon">&#127925;</span> 已保存的音色</h2>
+    <div class="voice-list" id="voiceList">
+      {% for v in voices %}
+      {% if v.type == 'clone' or v.type == 'design' %}
+      <div class="voice-item {% if v.id == default_voice %}active{% endif %}" data-id="{{ v.id }}">
+        <div class="dot" style="background:{% if v.type == 'design' %}var(--green){% else %}var(--yellow){% endif %}"></div>
+        <div class="v-info">
+          <div class="v-name">{{ v.name }}</div>
+          <div class="v-meta">{% if v.type == 'design' %}声音设计{% else %}声音克隆{% endif %}{% if v.id == default_voice %} · 默认{% endif %}</div>
+        </div>
+        <div class="v-actions">
+          <button class="btn-ghost" onclick="setDefault('{{ v.id }}')" title="设为默认">&#9733;</button>
+          <button class="btn-danger" onclick="deleteVoice('{{ v.id }}')" title="删除">&#10005;</button>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="tip" id="noVoice" {% if voices|selectattr('type','equalto','clone')|list|length > 0 or voices|selectattr('type','equalto','design')|list|length > 0 %}style="display:none"{% endif %}>暂无自定义音色，使用上方功能创建</div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+function showMsg(id, text, ok) {
+  const el = $('#' + id);
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+function addAudioPlayer(container, url) {
+  container.innerHTML = '';
+  const audio = new Audio(url);
+  const bar = document.createElement('div');
+  bar.className = 'audio-bar';
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-play';
+  btn.innerHTML = '&#9654;';
+  const progress = document.createElement('div');
+  progress.className = 'audio-progress';
+  const fill = document.createElement('div');
+  fill.className = 'audio-fill';
+  progress.appendChild(fill);
+  const time = document.createElement('span');
+  time.className = 'audio-time';
+  time.textContent = '0:00';
+
+  bar.appendChild(btn);
+  bar.appendChild(progress);
+  bar.appendChild(time);
+  container.appendChild(bar);
+
+  let playing = false;
+  btn.onclick = () => playing ? audio.pause() : audio.play();
+  audio.onplay = () => { playing = true; btn.innerHTML = '&#10074;&#10074;'; };
+  audio.onpause = () => { playing = false; btn.innerHTML = '&#9654;'; };
+  audio.onended = () => { playing = false; btn.innerHTML = '&#9654;'; fill.style.width = '0%'; time.textContent = '0:00'; };
+  audio.ontimeupdate = () => {
+    if (audio.duration) {
+      fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+      const m = Math.floor(audio.currentTime / 60);
+      const s = Math.floor(audio.currentTime % 60).toString().padStart(2, '0');
+      time.textContent = m + ':' + s;
+    }
+  };
+  progress.onclick = e => {
+    if (audio.duration) {
+      const r = progress.getBoundingClientRect();
+      audio.currentTime = (e.clientX - r.left) / r.width * audio.duration;
+    }
+  };
+  audio.play().catch(() => {});
+}
+
+// ---- 声音克隆 ----
+$('#btnPreviewClone').addEventListener('click', async () => {
+  const file = $('#cloneFile').files[0];
+  if (!file) { showMsg('cloneMsg', '请先上传参考音频', false); return; }
+
+  $('#btnPreviewClone').disabled = true;
+  $('#btnPreviewClone').textContent = '合成中...';
+  showMsg('cloneMsg', '正在合成...', true);
+
+  const text = '你好，这是声音克隆的试听效果，听起来怎么样？';
+  const form = new FormData();
+  form.append('text', text);
+  form.append('style', '用自然真实的语气说话');
+  form.append('voice_file', file);
+
+  try {
+    const res = await fetch('/api/tts/clone', {method: 'POST', body: form});
+    if (res.ok) {
+      const blob = await res.blob();
+      addAudioPlayer($('#cloneAudio'), URL.createObjectURL(blob));
+      showMsg('cloneMsg', '合成完成，点击播放试听', true);
+    } else {
+      const data = await res.json();
+      showMsg('cloneMsg', data.error || '合成失败', false);
+    }
+  } catch (e) {
+    showMsg('cloneMsg', e.message, false);
+  }
+
+  $('#btnPreviewClone').disabled = false;
+  $('#btnPreviewClone').textContent = '试听克隆效果';
+});
+
+$('#btnSaveClone').addEventListener('click', async () => {
+  const file = $('#cloneFile').files[0];
+  const name = $('#cloneName').value.trim();
+  if (!file) { showMsg('cloneMsg', '请先上传参考音频', false); return; }
+  if (!name) { showMsg('cloneMsg', '请输入音色名称', false); return; }
+
+  const form = new FormData();
+  form.append('voice_file', file);
+  form.append('name', name);
+
+  try {
+    const res = await fetch('/api/voices/clone', {method: 'POST', body: form});
+    const data = await res.json();
+    if (data.ok) {
+      showMsg('cloneMsg', '音色 "' + name + '" 已保存', true);
+      addVoiceItem(data.id, name, 'clone');
+      $('#cloneName').value = '';
+      $('#cloneFile').value = '';
+    } else {
+      showMsg('cloneMsg', data.error, false);
+    }
+  } catch (e) {
+    showMsg('cloneMsg', e.message, false);
+  }
+});
+
+// ---- 声音设计 ----
+$('#btnPreviewDesign').addEventListener('click', async () => {
+  const desc = $('#voiceDesc').value.trim();
+  const text = $('#designText').value.trim();
+  if (!desc) { showMsg('designMsg', '请描述你想要的声音', false); return; }
+  if (!text) { showMsg('designMsg', '请输入试听文本', false); return; }
+
+  $('#btnPreviewDesign').disabled = true;
+  $('#btnPreviewDesign').textContent = '合成中...';
+  showMsg('designMsg', '正在合成...', true);
+
+  try {
+    const res = await fetch('/api/tts/design', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text, description: desc})
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      addAudioPlayer($('#designAudio'), URL.createObjectURL(blob));
+      showMsg('designMsg', '合成完成，满意可保存为音色', true);
+    } else {
+      const data = await res.json();
+      showMsg('designMsg', data.error || '合成失败', false);
+    }
+  } catch (e) {
+    showMsg('designMsg', e.message, false);
+  }
+
+  $('#btnPreviewDesign').disabled = false;
+  $('#btnPreviewDesign').textContent = '试听声音设计';
+});
+
+$('#btnSaveDesign').addEventListener('click', async () => {
+  const desc = $('#voiceDesc').value.trim();
+  const name = $('#designName').value.trim();
+  if (!desc) { showMsg('designMsg', '请先填写声音描述', false); return; }
+  if (!name) { showMsg('designMsg', '请输入音色名称', false); return; }
+
+  const form = new FormData();
+  form.append('name', name);
+  form.append('description', desc);
+
+  try {
+    const res = await fetch('/api/voices/design', {method: 'POST', body: form});
+    const data = await res.json();
+    if (data.ok) {
+      showMsg('designMsg', '音色 "' + name + '" 已保存', true);
+      addVoiceItem(data.id, name, 'design');
+      $('#designName').value = '';
+    } else {
+      showMsg('designMsg', data.error, false);
+    }
+  } catch (e) {
+    showMsg('designMsg', e.message, false);
+  }
+});
+
+// ---- 音色列表 ----
+function addVoiceItem(id, name, type) {
+  $('#noVoice').style.display = 'none';
+  const div = document.createElement('div');
+  div.className = 'voice-item';
+  div.dataset.id = id;
+  div.innerHTML = `
+    <div class="dot" style="background:${type === 'design' ? 'var(--green)' : 'var(--yellow)'}"></div>
+    <div class="v-info">
+      <div class="v-name">${name}</div>
+      <div class="v-meta">${type === 'design' ? '声音设计' : '声音克隆'}</div>
+    </div>
+    <div class="v-actions">
+      <button class="btn-ghost" onclick="setDefault('${id}')" title="设为默认">&#9733;</button>
+      <button class="btn-danger" onclick="deleteVoice('${id}')" title="删除">&#10005;</button>
+    </div>
+  `;
+  $('#voiceList').appendChild(div);
+}
+
+async function setDefault(id) {
+  try {
+    const res = await fetch('/api/voices/default', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({voice_id: id})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.querySelectorAll('.voice-item').forEach(v => {
+        v.classList.toggle('active', v.dataset.id === id);
+        const meta = v.querySelector('.v-meta');
+        if (v.dataset.id === id) {
+          if (!meta.textContent.includes('默认')) meta.textContent += ' · 默认';
+        } else {
+          meta.textContent = meta.textContent.replace(' · 默认', '');
+        }
+      });
+    }
+  } catch (e) {
+    alert('设置失败: ' + e.message);
+  }
+}
+
+async function deleteVoice(id) {
+  if (!confirm('确定删除此音色？')) return;
+  try {
+    const res = await fetch('/api/voices/clone/' + id, {method: 'DELETE'});
+    const data = await res.json();
+    if (data.ok) {
+      const el = document.querySelector(`.voice-item[data-id="${id}"]`);
+      if (el) el.remove();
+      const remaining = document.querySelectorAll('#voiceList .voice-item');
+      if (remaining.length === 0) $('#noVoice').style.display = '';
+    }
+  } catch (e) {
+    alert('删除失败: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

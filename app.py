@@ -90,6 +90,13 @@ def index():
     return render_template("index.html", api_ready=api_ready, voices=all_voices, default_voice=default_voice)
 
 
+@app.route("/voices")
+def voices_page():
+    all_voices = _get_all_voices()
+    default_voice = _get_default_voice()
+    return render_template("voices.html", voices=all_voices, default_voice=default_voice)
+
+
 @app.route("/api/voices")
 def get_voices():
     return jsonify({"voices": _get_all_voices(), "default": _get_default_voice()})

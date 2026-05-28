@@ -358,6 +358,19 @@ def api_clear():
     return jsonify({"ok": True})
 
 
+@app.route("/api/skill/reload", methods=["POST"])
+def api_reload_skill():
+    """按需重新加载 skill 文件"""
+    length = chat_bot.reload_skill()
+    return jsonify({"ok": True, "length": length})
+
+
+@app.route("/api/skill", methods=["GET"])
+def api_get_skill():
+    """查看当前加载的系统提示词"""
+    return jsonify({"prompt": chat_bot._system_prompt, "length": len(chat_bot._system_prompt)})
+
+
 if __name__ == "__main__":
     import argparse
 

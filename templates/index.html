@@ -297,10 +297,25 @@ inputText.addEventListener('keydown', e => {
 });
 
 // ---- 消息 ----
-function addMsg(text, role) {
+// 从回复中提取情绪标签，返回 {tag, text}
+function extractEmotion(reply) {
+  const m = reply.match(/^\(([^)]+)\)\s*/);
+  if (m) return {tag: m[1], text: reply.slice(m[0].length)};
+  return {tag: null, text: reply};
+}
+
+function addMsg(text, role, emotionTag) {
   const div = document.createElement('div');
   div.className = 'msg ' + role;
-  div.textContent = text;
+  if (emotionTag) {
+    const badge = document.createElement('span');
+    badge.style.cssText = 'display:inline-block;font-size:11px;padding:1px 6px;border-radius:99px;background:rgba(108,92,231,.2);color:var(--accent2);margin-bottom:6px;margin-right:6px';
+    badge.textContent = emotionTag;
+    div.appendChild(badge);
+  }
+  const span = document.createElement('span');
+  span.textContent = text;
+  div.appendChild(span);
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
   return div;
@@ -352,13 +367,18 @@ async function sendMessage(text, cloneFile) {
     }
 
     removeTyping();
-    if (reply) addMsg(reply, 'bot');
+    let ttsText = reply;
+    if (reply) {
+      const {tag, text: cleanText} = extractEmotion(reply);
+      addMsg(cleanText, 'bot', tag);
+      ttsText = reply; // 带标签的原文发给TTS
+    }
 
     const style = inputStyle.value.trim();
     let ttsRes;
     if (cloneFile) {
       const form = new FormData();
-      form.append('text', reply || inputText.value.trim());
+      form.append('text', ttsText || inputText.value.trim());
       form.append('style', style);
       form.append('voice_file', cloneFile);
       ttsRes = await fetch('/api/tts/clone', {method: 'POST', body: form});
@@ -366,7 +386,7 @@ async function sendMessage(text, cloneFile) {
       ttsRes = await fetch('/api/tts', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({text: reply, voice: currentVoice, style})
+        body: JSON.stringify({text: ttsText, voice: currentVoice, style})
       });
     }
     if (ttsRes && ttsRes.ok) {

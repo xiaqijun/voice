@@ -298,10 +298,17 @@ inputText.addEventListener('keydown', e => {
 });
 
 // ---- 消息 ----
+// 提取所有情绪标签，返回 {tags: [...], cleanText}
 function extractEmotion(reply) {
-  const m = reply.match(/^\(([^)]+)\)\s*/);
-  if (m) return {tag: m[1], text: reply.slice(m[0].length)};
-  return {tag: null, text: reply};
+  const tags = [];
+  let clean = reply;
+  const re = /\(([^)]+)\)\s*/g;
+  let m;
+  while ((m = re.exec(reply)) !== null) {
+    tags.push(m[1]);
+  }
+  clean = reply.replace(/\([^)]+\)\s*/g, '');
+  return {tags, text: clean};
 }
 
 function addMsg(text, role, emotionTag) {
@@ -397,8 +404,9 @@ async function sendMessage(text) {
 
     removeTyping();
     const reply = data.reply;
-    const {tag, text: cleanText} = extractEmotion(reply);
-    const msgDiv = addMsg(cleanText, 'bot', tag);
+    const {tags, text: cleanText} = extractEmotion(reply);
+    const emotionStr = tags.length > 0 ? tags.join(' · ') : null;
+    const msgDiv = addMsg(cleanText, 'bot', emotionStr);
 
     const style = inputStyle.value.trim();
     const ttsRes = await fetch('/api/tts', {

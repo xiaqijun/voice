@@ -2,34 +2,36 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>MiMo 语音聊天机器人</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0f0f13;--surface:#1a1a24;--surface2:#242436;--border:#2e2e44;--text:#e8e8f0;--text2:#9090a8;--accent:#6c5ce7;--accent2:#a29bfe;--green:#00b894;--red:#ff6b6b;--yellow:#fdcb6e;--radius:12px}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-header h1{font-size:18px;font-weight:600}
-header .badge{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--accent);color:#fff}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f0f13;--surface:#1a1a24;--surface2:#242436;--border:#2e2e44;--text:#e8e8f0;--text2:#9090a8;--accent:#6c5ce7;--accent2:#a29bfe;--green:#00b894;--red:#ff6b6b;--yellow:#fdcb6e;--radius:12px;--safe-bottom:env(safe-area-inset-bottom,0px)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+header h1{font-size:17px;font-weight:600;flex:1;white-space:nowrap}
+header .badge{font-size:10px;padding:2px 7px;border-radius:99px;background:var(--accent);color:#fff;flex-shrink:0}
 header .badge.offline{background:var(--red)}
-.container{display:flex;flex:1;overflow:hidden}
-.chat-area{flex:1;display:flex;flex-direction:column}
-.messages{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:75%;padding:12px 16px;border-radius:var(--radius);line-height:1.6;font-size:14px;animation:fadeIn .2s}
+.container{display:flex;flex:1;overflow:hidden;position:relative}
+.chat-area{flex:1;display:flex;flex-direction:column;min-width:0}
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+.msg{max-width:80%;padding:10px 14px;border-radius:var(--radius);line-height:1.6;font-size:14px;word-break:break-word;animation:fadeIn .2s}
 .msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
 .msg.bot{align-self:flex-start;background:var(--surface2);border-bottom-left-radius:4px}
-.msg.system{align-self:center;background:transparent;color:var(--text2);font-size:12px;padding:4px 0}
+.msg.system{align-self:center;background:transparent;color:var(--text2);font-size:12px;padding:4px 0;text-align:center}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.input-bar{padding:16px 24px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end}
-.input-bar textarea{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:12px 14px;font-size:14px;resize:none;outline:none;font-family:inherit;min-height:44px;max-height:120px;line-height:1.5}
+.input-bar{padding:10px 12px;padding-bottom:calc(10px + var(--safe-bottom));background:var(--surface);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.input-bar textarea{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:10px 12px;font-size:16px;resize:none;outline:none;font-family:inherit;min-height:40px;max-height:100px;line-height:1.4}
 .input-bar textarea:focus{border-color:var(--accent)}
 .input-bar textarea::placeholder{color:var(--text2)}
-.btn{border:none;border-radius:var(--radius);cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.btn-primary{background:var(--accent);color:#fff;padding:0 20px;height:44px}
+.btn{border:none;border-radius:var(--radius);cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0}
+.btn-primary{background:var(--accent);color:#fff;padding:0 16px;height:40px}
 .btn-primary:hover{background:var(--accent2)}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed}
 .btn-sm{height:32px;padding:0 12px;font-size:12px}
-.btn-icon{width:44px;height:44px;background:var(--surface2);color:var(--text);border:1px solid var(--border);font-size:18px}
+.btn-icon{width:40px;height:40px;background:var(--surface2);color:var(--text);border:1px solid var(--border);font-size:17px}
 .btn-icon:hover{background:var(--border)}
 .btn-icon.recording{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1s infinite}
 .btn-ghost{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:14px}
@@ -37,66 +39,94 @@ header .badge.offline{background:var(--red)}
 .btn-danger{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:12px}
 .btn-danger:hover{color:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-.sidebar{width:300px;background:var(--surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
-.sidebar h3{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px}
-.field select,.field input[type="text"],.field input[type="file"]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font-size:13px;outline:none;font-family:inherit}
+.sidebar{width:300px;background:var(--surface);border-left:1px solid var(--border);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;-webkit-overflow-scrolling:touch}
+.sidebar h3{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.field select,.field input[type="text"],.field input[type="file"]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font-size:14px;outline:none;font-family:inherit}
 .field select:focus,.field input:focus{border-color:var(--accent)}
 .field input[type="file"]{padding:8px;cursor:pointer}
 .field input[type="file"]::file-selector-button{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;margin-right:8px;font-size:12px}
-.voice-list{display:flex;flex-direction:column;gap:4px}
-.voice-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .15s}
-.voice-item:hover{background:var(--surface2)}
+.voice-list{display:flex;flex-direction:column;gap:3px}
+.voice-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.voice-item:hover,.voice-item:active{background:var(--surface2)}
 .voice-item.active{border-color:var(--accent);background:rgba(108,92,231,.1)}
 .voice-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .voice-item .v-info{flex:1;min-width:0}
 .voice-item .v-name{font-size:13px;font-weight:500}
 .voice-item .v-meta{font-size:11px;color:var(--text2)}
-.voice-item .v-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .15s}
-.voice-item:hover .v-actions{opacity:1}
+.voice-item .v-actions{display:flex;gap:2px;flex-shrink:0}
 .voice-section{margin-bottom:4px}
-.voice-section-title{font-size:11px;color:var(--text2);padding:4px 12px;text-transform:uppercase;letter-spacing:.5px}
-.typing{display:flex;gap:4px;padding:12px 16px;align-self:flex-start}
+.voice-section-title{font-size:11px;color:var(--text2);padding:4px 10px;text-transform:uppercase;letter-spacing:.5px}
+.typing{display:flex;gap:4px;padding:10px 14px;align-self:flex-start}
 .typing span{width:6px;height:6px;border-radius:50%;background:var(--text2);animation:bounce .6s infinite}
 .typing span:nth-child(2){animation-delay:.15s}
 .typing span:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .clone-save{display:flex;gap:6px;margin-top:8px}
 .clone-save input{flex:1}
-@media(max-width:768px){.sidebar{display:none}.msg{max-width:90%}}
+
+/* 菜单按钮 */
+.btn-menu{display:none;width:36px;height:36px;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;flex-shrink:0;align-items:center;justify-content:center;border-radius:8px}
+.btn-menu:hover{background:var(--surface2)}
+
+/* 遮罩层 */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;opacity:0;transition:opacity .2s}
+.sidebar-overlay.show{display:block;opacity:1}
+
+/* 移动端适配 */
+@media(max-width:768px){
+  .btn-menu{display:flex}
+  .msg{max-width:88%}
+  .sidebar{position:fixed;right:0;top:0;bottom:0;z-index:100;transform:translateX(100%);transition:transform .25s ease;width:min(300px,85vw);padding-top:16px}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar .v-actions{opacity:1}
+  .voice-item .v-actions{opacity:1}
+  header{padding:10px 12px}
+  .input-bar{padding:8px 10px;padding-bottom:calc(8px + var(--safe-bottom))}
+  .input-bar textarea{font-size:16px;padding:8px 10px}
+  .btn-icon{width:38px;height:38px;font-size:16px}
+  .btn-primary{height:38px;padding:0 14px;font-size:13px}
+}
+
+@media(max-width:380px){
+  header h1{font-size:15px}
+  .badge{font-size:9px;padding:2px 5px}
+}
 </style>
 </head>
 <body>
 
 <header>
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/></svg>
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/></svg>
   <h1>MiMo 语音聊天</h1>
   {% if api_ready %}
   <span class="badge">API 已连接</span>
   {% else %}
   <span class="badge offline">未配置 API</span>
   {% endif %}
+  <button class="btn-menu" id="btnMenu" title="设置">&#9776;</button>
 </header>
 
 <div class="container">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="chat-area">
     <div class="messages" id="messages">
-      <div class="msg system">欢迎使用小米MiMo语音聊天机器人，输入消息开始对话</div>
+      <div class="msg system">欢迎使用小米MiMo语音聊天机器人</div>
     </div>
     <div class="input-bar">
       <button class="btn btn-icon" id="btnRecord" title="录音">&#127908;</button>
-      <textarea id="inputText" rows="1" placeholder="输入消息... (Enter发送，Shift+Enter换行)"></textarea>
+      <textarea id="inputText" rows="1" placeholder="输入消息..."></textarea>
       <button class="btn btn-primary" id="btnSend">发送</button>
-      <button class="btn btn-icon" id="btnClear" title="清除对话">&#128465;</button>
+      <button class="btn btn-icon" id="btnClear" title="清除">&#128465;</button>
     </div>
   </div>
 
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <!-- 音色选择 -->
     <div>
       <h3>音色选择</h3>
       <div class="voice-list" id="voiceList">
-        <!-- 内置音色 -->
         <div class="voice-section">
           <div class="voice-section-title">内置音色</div>
           {% for v in voices %}
@@ -114,7 +144,6 @@ header .badge.offline{background:var(--red)}
           {% endif %}
           {% endfor %}
         </div>
-        <!-- 克隆音色 -->
         <div class="voice-section">
           <div class="voice-section-title">自定义音色</div>
           <div id="cloneVoiceList">
@@ -134,12 +163,11 @@ header .badge.offline{background:var(--red)}
             {% endif %}
             {% endfor %}
           </div>
-          <div class="msg system" id="noClone" style="{% if voices|selectattr('type','equalto','clone')|list|length > 0 %}display:none{% endif %}">暂无克隆音色</div>
+          <div class="msg system" id="noClone" style="{% if voices|selectattr('type','equalto','clone')|list|length > 0 %}display:none{% endif %}">暂无自定义音色</div>
         </div>
       </div>
     </div>
 
-    <!-- 风格控制 -->
     <div>
       <h3>风格控制</h3>
       <div class="field">
@@ -147,7 +175,6 @@ header .badge.offline{background:var(--red)}
       </div>
     </div>
 
-    <!-- 声音克隆 -->
     <div>
       <h3>声音克隆</h3>
       <div class="field">
@@ -155,28 +182,27 @@ header .badge.offline{background:var(--red)}
         <input type="file" id="cloneFile" accept=".mp3,.wav">
       </div>
       <div class="clone-save">
-        <input type="text" id="cloneName" placeholder="音色名称" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:13px;outline:none">
+        <input type="text" id="cloneName" placeholder="音色名称" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:14px;outline:none">
         <button class="btn btn-primary btn-sm" id="btnSaveClone">保存</button>
       </div>
       <div style="margin-top:8px">
-        <button class="btn btn-primary" id="btnClone" style="width:100%;height:38px;font-size:13px">临时试听克隆</button>
+        <button class="btn btn-primary" id="btnClone" style="width:100%;height:36px;font-size:13px">临时试听克隆</button>
       </div>
-      <div class="msg system" style="margin-top:6px;font-size:11px">建议: 10-30秒清晰单人音频，wav格式效果更佳</div>
+      <div class="msg system" style="margin-top:6px;font-size:11px">建议: 10-30秒清晰音频</div>
     </div>
 
-    <!-- 声音设计 -->
     <div>
       <h3>声音设计</h3>
       <div class="field">
         <label>用文字描述你想要的声音</label>
-        <input type="text" id="voiceDesignDesc" placeholder="如: 年轻女性，温柔甜美，语速稍慢">
+        <input type="text" id="voiceDesignDesc" placeholder="如: 年轻女性，温柔甜美">
       </div>
       <div class="clone-save">
-        <input type="text" id="designName" placeholder="音色名称" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:13px;outline:none">
+        <input type="text" id="designName" placeholder="音色名称" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:14px;outline:none">
         <button class="btn btn-primary btn-sm" id="btnSaveDesign">保存</button>
       </div>
       <div style="margin-top:8px">
-        <button class="btn btn-primary" id="btnDesign" style="width:100%;height:38px;font-size:13px">试听声音设计</button>
+        <button class="btn btn-primary" id="btnDesign" style="width:100%;height:36px;font-size:13px">试听声音设计</button>
       </div>
     </div>
   </div>
@@ -190,6 +216,32 @@ const inputText = $('#inputText');
 const inputStyle = $('#inputStyle');
 let currentVoice = '{{ default_voice }}';
 let isSending = false;
+
+// ---- 侧边栏 ----
+const sidebar = $('#sidebar');
+const overlay = $('#sidebarOverlay');
+
+function openSidebar() {
+  sidebar.classList.add('open');
+  overlay.classList.add('show');
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+}
+
+$('#btnMenu').addEventListener('click', () => {
+  sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+});
+overlay.addEventListener('click', closeSidebar);
+
+// 点击音色后在移动端自动关闭侧边栏
+sidebar.addEventListener('click', e => {
+  const item = e.target.closest('.voice-item');
+  if (item && !e.target.closest('.v-actions') && window.innerWidth <= 768) {
+    setTimeout(closeSidebar, 200);
+  }
+});
 
 // ---- 音色选择 ----
 $('#voiceList').addEventListener('click', e => {
@@ -221,7 +273,7 @@ async function setDefault(voiceId) {
 }
 
 async function deleteClone(voiceId) {
-  if (!confirm('确定删除此克隆音色？')) return;
+  if (!confirm('确定删除此音色？')) return;
   try {
     const res = await fetch('/api/voices/clone/' + voiceId, {method: 'DELETE'});
     const data = await res.json();
@@ -229,10 +281,9 @@ async function deleteClone(voiceId) {
       const el = document.querySelector(`.voice-item[data-voice="${voiceId}"]`);
       if (el) el.remove();
       if (currentVoice === voiceId) currentVoice = '冰糖';
-      // 检查是否还有克隆音色
       const remaining = document.querySelectorAll('#cloneVoiceList .voice-item');
       if (remaining.length === 0) $('#noClone').style.display = '';
-      addMsg('克隆音色已删除', 'system');
+      addMsg('音色已删除', 'system');
     }
   } catch (err) {
     addMsg('删除失败: ' + err.message, 'system');
@@ -254,7 +305,6 @@ $('#btnSaveClone').addEventListener('click', async () => {
     const res = await fetch('/api/voices/clone', {method: 'POST', body: form});
     const data = await res.json();
     if (data.ok) {
-      // 添加到列表
       $('#noClone').style.display = 'none';
       const div = document.createElement('div');
       div.className = 'voice-item';
@@ -274,7 +324,7 @@ $('#btnSaveClone').addEventListener('click', async () => {
       $('#cloneVoiceList').appendChild(div);
       $('#cloneName').value = '';
       $('#cloneFile').value = '';
-      addMsg('音色 "' + name + '" 已保存，点击可选中使用', 'system');
+      addMsg('音色 "' + name + '" 已保存', 'system');
     } else {
       addMsg('保存失败: ' + data.error, 'system');
     }
@@ -286,7 +336,7 @@ $('#btnSaveClone').addEventListener('click', async () => {
 // ---- 文本输入 ----
 inputText.addEventListener('input', () => {
   inputText.style.height = 'auto';
-  inputText.style.height = Math.min(inputText.scrollHeight, 120) + 'px';
+  inputText.style.height = Math.min(inputText.scrollHeight, 100) + 'px';
 });
 
 inputText.addEventListener('keydown', e => {
@@ -297,7 +347,6 @@ inputText.addEventListener('keydown', e => {
 });
 
 // ---- 消息 ----
-// 从回复中提取情绪标签，返回 {tag, text}
 function extractEmotion(reply) {
   const m = reply.match(/^\(([^)]+)\)\s*/);
   if (m) return {tag: m[1], text: reply.slice(m[0].length)};
@@ -309,7 +358,7 @@ function addMsg(text, role, emotionTag) {
   div.className = 'msg ' + role;
   if (emotionTag) {
     const badge = document.createElement('span');
-    badge.style.cssText = 'display:inline-block;font-size:11px;padding:1px 6px;border-radius:99px;background:rgba(108,92,231,.2);color:var(--accent2);margin-bottom:6px;margin-right:6px';
+    badge.style.cssText = 'display:inline-block;font-size:11px;padding:1px 6px;border-radius:99px;background:rgba(108,92,231,.2);color:var(--accent2);margin-bottom:4px;margin-right:6px';
     badge.textContent = emotionTag;
     div.appendChild(badge);
   }
@@ -371,7 +420,7 @@ async function sendMessage(text, cloneFile) {
     if (reply) {
       const {tag, text: cleanText} = extractEmotion(reply);
       addMsg(cleanText, 'bot', tag);
-      ttsText = reply; // 带标签的原文发给TTS
+      ttsText = reply;
     }
 
     const style = inputStyle.value.trim();
@@ -447,7 +496,7 @@ $('#btnDesign').addEventListener('click', async () => {
     if (res.ok) {
       const blob = await res.blob();
       playAudio(URL.createObjectURL(blob));
-      addMsg('试听完成，满意的话可以保存为音色', 'system');
+      addMsg('试听完成，满意可保存为音色', 'system');
     } else {
       const data = await res.json();
       addMsg('错误: ' + (data.error || '合成失败'), 'system');
@@ -513,9 +562,8 @@ $('#btnRecord').addEventListener('click', async () => {
     return;
   }
 
-  // 检查浏览器是否支持
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    addMsg('浏览器不支持录音。请确保使用 Chrome/Edge，并通过 http://localhost:5000 访问（不能用 IP 地址）', 'system');
+    addMsg('浏览器不支持录音，请使用 Chrome/Edge 并通过 localhost 访问', 'system');
     return;
   }
 
@@ -526,8 +574,6 @@ $('#btnRecord').addEventListener('click', async () => {
     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
     mediaRecorder.onstop = () => {
       stream.getTracks().forEach(t => t.stop());
-      const blob = new Blob(audioChunks, {type: 'audio/webm'});
-      const url = URL.createObjectURL(blob);
       addMsg('[录音完成] 语音识别功能待接入', 'system');
     };
     mediaRecorder.start();
@@ -535,14 +581,21 @@ $('#btnRecord').addEventListener('click', async () => {
     $('#btnRecord').innerHTML = '&#9724;';
   } catch (err) {
     if (err.name === 'NotAllowedError') {
-      addMsg('麦克风权限被拒绝。请点击浏览器地址栏的锁图标，允许麦克风权限后重试。', 'system');
+      addMsg('麦克风权限被拒绝，请在浏览器设置中允许', 'system');
     } else if (err.name === 'NotFoundError') {
-      addMsg('未检测到麦克风设备。请检查麦克风是否已连接。', 'system');
+      addMsg('未检测到麦克风设备', 'system');
     } else {
-      addMsg('无法访问麦克风: ' + err.message + '。请确保通过 http://localhost:5000 访问页面。', 'system');
+      addMsg('无法访问麦克风: ' + err.message, 'system');
     }
   }
 });
+
+// 键盘弹出时自动滚动到底部
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    messages.scrollTop = messages.scrollHeight;
+  });
+}
 </script>
 </body>
 </html>

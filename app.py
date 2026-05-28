@@ -292,10 +292,32 @@ def api_clear():
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ssl", action="store_true", help="启用HTTPS (自签名证书)")
+    parser.add_argument("--port", type=int, default=5000, help="端口号")
+    args = parser.parse_args()
+
     init_api()
+
+    ssl_context = None
+    protocol = "http"
+    if args.ssl:
+        cert_path = os.path.join(os.path.dirname(__file__), "cert.pem")
+        key_path = os.path.join(os.path.dirname(__file__), "key.pem")
+        if os.path.exists(cert_path) and os.path.exists(key_path):
+            ssl_context = (cert_path, key_path)
+            protocol = "https"
+        else:
+            print("[!] SSL证书文件不存在，请先生成: openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes")
+
     print("=" * 50)
     print("  小米MiMo语音聊天机器人 Web面板")
-    print("  请用浏览器打开: http://localhost:5000")
-    print("  (麦克风功能需要通过 localhost 访问)")
+    print(f"  {protocol}://0.0.0.0:{args.port}")
+    if args.ssl:
+        print("  (HTTPS已启用，麦克风功能可用)")
+    else:
+        print("  (HTTP模式，麦克风需要HTTPS或localhost)")
     print("=" * 50)
-    app.run(debug=False, host="0.0.0.0", port=5000)
+    app.run(debug=False, host="0.0.0.0", port=args.port, ssl_context=ssl_context)

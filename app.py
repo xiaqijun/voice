@@ -298,4 +298,4 @@ if __name__ == "__main__":
     print("  请用浏览器打开: http://localhost:5000")
     print("  (麦克风功能需要通过 localhost 访问)")
     print("=" * 50)
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    app.run(debug=False, host="0.0.0.0", port=5000)

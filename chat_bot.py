@@ -67,10 +67,23 @@ class SkillLoader:
         self._all_names = list(sections.keys())
         self._mtime = mtime
 
+    def _match_section(self, name: str) -> Optional[str]:
+        """精确匹配或前缀匹配章节名"""
+        if name in self._sections:
+            return name
+        for actual in self._sections:
+            if actual.startswith(name):
+                return actual
+        return None
+
     def get_sections(self, names: List[str]) -> str:
-        """按章节名列表提取内容"""
+        """按章节名列表提取内容（支持前缀匹配）"""
         self._read_and_parse()
-        parts = [self._sections[n] for n in names if n in self._sections]
+        parts = []
+        for n in names:
+            actual = self._match_section(n)
+            if actual:
+                parts.append(self._sections[actual])
         return "\n\n".join(parts)
 
     def get_all(self) -> str:
@@ -84,7 +97,7 @@ class SkillLoader:
         names = list(_CORE_SECTIONS)
         text_lower = text.lower()
         for section_name, keywords in _EXTRA_KEYWORDS.items():
-            if section_name in self._sections and any(kw in text_lower for kw in keywords):
+            if self._match_section(section_name) and any(kw in text_lower for kw in keywords):
                 names.append(section_name)
         return self.get_sections(names)
 

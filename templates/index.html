@@ -298,17 +298,22 @@ inputText.addEventListener('keydown', e => {
 });
 
 // ---- 消息 ----
-// 提取所有情绪标签，返回 {tags: [...], cleanText}
-function extractEmotion(reply) {
-  const tags = [];
-  let clean = reply;
-  const re = /\(([^)]+)\)\s*/g;
+// 解析带标签的回复，返回 [{tag, text}, ...]
+function parseTaggedReply(reply) {
+  const segments = [];
+  const re = /\(([^)]+)\)\s*([^(\n]*(?:\((?!\))[^(\n]*)*)?/g;
   let m;
+  let lastEnd = 0;
   while ((m = re.exec(reply)) !== null) {
-    tags.push(m[1]);
+    // 提取标签和紧跟的文本
+    segments.push({tag: m[1], text: m[2] || ''});
+    lastEnd = re.lastIndex;
   }
-  clean = reply.replace(/\([^)]+\)\s*/g, '');
-  return {tags, text: clean};
+  // 如果没有标签，整段作为无标签文本
+  if (segments.length === 0 && reply.trim()) {
+    segments.push({tag: null, text: reply.trim()});
+  }
+  return segments;
 }
 
 function addMsg(text, role, emotionTag) {
@@ -323,6 +328,35 @@ function addMsg(text, role, emotionTag) {
   const span = document.createElement('span');
   span.textContent = text;
   div.appendChild(span);
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+// 显示带标签的消息（每个标签紧跟对应句子）
+function addTaggedMsg(reply, role) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const segments = parseTaggedReply(reply);
+  if (segments.length === 0) {
+    const span = document.createElement('span');
+    span.textContent = reply;
+    div.appendChild(span);
+  } else {
+    segments.forEach(seg => {
+      if (seg.tag) {
+        const badge = document.createElement('span');
+        badge.style.cssText = 'display:inline-block;font-size:11px;padding:1px 6px;border-radius:99px;background:rgba(108,92,231,.2);color:var(--accent2);margin:0 2px';
+        badge.textContent = seg.tag;
+        div.appendChild(badge);
+      }
+      if (seg.text) {
+        const span = document.createElement('span');
+        span.textContent = seg.text;
+        div.appendChild(span);
+      }
+    });
+  }
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
   return div;
@@ -404,9 +438,7 @@ async function sendMessage(text) {
 
     removeTyping();
     const reply = data.reply;
-    const {tags, text: cleanText} = extractEmotion(reply);
-    const emotionStr = tags.length > 0 ? tags.join(' · ') : null;
-    const msgDiv = addMsg(cleanText, 'bot', emotionStr);
+    const msgDiv = addTaggedMsg(reply, 'bot');
 
     const style = inputStyle.value.trim();
     const ttsRes = await fetch('/api/tts', {

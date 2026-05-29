@@ -115,14 +115,20 @@ class XiaomiTTS:
         data, sr = sf.read(voice_path)
         duration = len(data) / sr
 
-        # 时长校验
+        # 时长校验 + 智能裁剪
         if duration < 3:
             print(f"[clone] 参考音频仅 {duration:.1f}s，建议 10-30s 以获得最佳效果")
-        elif duration > 60:
-            print(f"[clone] 参考音频 {duration:.1f}s 过长，截取前 60s")
-            data = data[:int(60 * sr)]
         elif duration > 30:
-            print(f"[clone] 参考音频 {duration:.1f}s，建议 10-30s 效果更佳")
+            trim_result = self._smart_trim(data, sr, duration)
+            if trim_result is not None:
+                data = trim_result
+                print(f"[clone] 智能裁剪完成: {duration:.1f}s -> {len(data)/sr:.1f}s")
+            else:
+                # fallback: 取中间 25 秒
+                mid = len(data) // 2
+                half = int(12.5 * sr)
+                data = data[max(0, mid - half):mid + half]
+                print(f"[clone] 智能裁剪失败，取中间 25s")
 
         # 多声道转单声道
         if data.ndim > 1:
@@ -142,6 +148,61 @@ class XiaomiTTS:
         tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         sf.write(tmp.name, data, 16000)
         return tmp.name
+
+    def _smart_trim(self, data, sr, duration):
+        """用 MiMo-v2.5 分析音频，找出最佳片段并裁剪"""
+        import soundfile as sf
+
+        # 导出为临时 WAV 供分析
+        tmp_in = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+        sf.write(tmp_in.name, data, sr)
+        tmp_in.close()
+
+        try:
+            # base64 编码
+            with open(tmp_in.name, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("utf-8")
+
+            client = OpenAI(
+                api_key=config.MIMO_API_KEY,
+                base_url=config.MIMO_BASE_URL,
+            )
+            completion = client.chat.completions.create(
+                model="mimo-v2.5",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_audio",
+                            "input_audio": {"data": f"data:audio/wav;base64,{b64}"}
+                        },
+                        {
+                            "type": "text",
+                            "text": (
+                                "请分析这段语音，找出音质最好、最清晰、情绪最稳定的连续片段。\n"
+                                "要求：片段时长 15-30 秒，避开开头和结尾的杂音/停顿/背景噪音。\n"
+                                "只输出时间戳，格式：start-end（如 15.2-42.8），不要输出其他内容。"
+                            )
+                        }
+                    ]
+                }],
+                max_tokens=50,
+            )
+            text = completion.choices[0].message.content.strip()
+            # 解析时间戳 "15.2-42.8"
+            import re
+            match = re.search(r'(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)', text)
+            if match:
+                start = float(match.group(1))
+                end = float(match.group(2))
+                if 0 <= start < end <= duration and (end - start) >= 10:
+                    return data[int(start * sr):int(end * sr)]
+            return None
+        except Exception as e:
+            print(f"[clone] 智能裁剪分析失败: {e}")
+            return None
+        finally:
+            os.remove(tmp_in.name)
 
     def _load_voice_sample(self, voice_path: str) -> str:
         """加载音频样本并转为 data:audio/mpeg;base64,... 格式"""

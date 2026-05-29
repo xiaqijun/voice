@@ -372,6 +372,7 @@ def api_reload_skill():
 @app.route("/api/skill", methods=["GET"])
 def api_get_skill():
     """查看当前系统提示词状态"""
+    chat_bot._loader._read_and_parse()  # 确保文件已解析
     base_len = len(chat_bot._base_prompt)
     skill_len = len(chat_bot._last_skill_content)
     sections = chat_bot._loader._all_names

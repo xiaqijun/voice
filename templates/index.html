@@ -218,17 +218,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
         </div>
       </div>
     </div>
-
-    <div>
-      <h3>风格控制</h3>
-      <div class="field">
-        <input type="text" id="inputStyle" placeholder="如：温柔、慵懒的语气">
-      </div>
-    </div>
-
-    <div>
-      <a href="/voices" style="display:block;text-align:center;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:13px">管理克隆 / 设计音色</a>
-    </div>
   </div>
 </div>
 
@@ -237,7 +226,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const messages = $('#messages');
 const inputText = $('#inputText');
-const inputStyle = $('#inputStyle');
+const inputStyle = null;
 let currentVoice = '{{ default_voice }}';
 let isSending = false;
 let lastVoiceContext = ''; // ASR识别的语音特征
@@ -476,11 +465,10 @@ async function sendMessage(text) {
     const reply = data.reply;
     const msgDiv = addTaggedMsg(reply, 'bot');
 
-    const style = inputStyle.value.trim();
     const ttsRes = await fetch('/api/tts', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({text: reply, voice: currentVoice, style})
+      body: JSON.stringify({text: reply, voice: currentVoice})
     });
     if (ttsRes && ttsRes.ok) {
       const blob = await ttsRes.blob();

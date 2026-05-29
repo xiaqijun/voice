@@ -53,38 +53,65 @@ def load_skill_sections(skill_path: str = None, sections: list = None) -> str:
     return "\n\n".join(result_parts)
 
 
+def fix_stacked_tags(text: str) -> str:
+    """修正标签堆叠在开头的问题
+
+    检测模式: (tag1)(tag2)(tag3)句子1。句子2。句子3。
+    修正为: (tag1)句子1。(tag2)句子2。(tag3)句子3。
+    """
+    # 匹配开头连续的标签 + 后面的句子
+    pattern = r'^(\([^)]+\)\s*){2,}'
+    if not re.match(pattern, text):
+        return text  # 没有堆叠，原样返回
+
+    # 提取所有标签
+    tags = re.findall(r'\(([^)]+)\)', text)
+    # 去掉标签部分，提取剩余文本
+    remaining = re.sub(r'^(\([^)]+\)\s*)+', '', text)
+    # 按句号/感叹号/问号分句
+    sentences = re.split(r'(?<=[。！？\n])', remaining)
+    sentences = [s.strip() for s in sentences if s.strip()]
+
+    if len(tags) != len(sentences):
+        # 标签和句子数量不匹配，无法修正，原样返回
+        return text
+
+    # 重新组合
+    parts = []
+    for tag, sentence in zip(tags, sentences):
+        parts.append(f"({tag}){sentence}")
+    return "".join(parts)
+
+
 def build_system_prompt(skill_content: str = None) -> str:
     """从 skill 内容构建系统提示词"""
     intro = """你是MiMo，小米公司研发的AI智能助手。你要像真人一样说话，而不是像机器播报。
 
-## 输出规则
+## 最重要的输出规则
 
-每句话前面紧跟该句的情绪标签，标签只控制它后面的那句话。
+你必须严格按照以下格式输出，每个标签只控制紧跟它的那句话：
 
-正确格式:
-(标签A)第一句。(标签B)第二句。(标签C)第三句。
+(标签)这句话的内容。(标签)下一句话的内容。(标签)再下句话的内容。
 
-错误格式（不要这样写）:
-(标签A)(标签B)(标签C)第一句。第二句。第三句。
+绝对不要这样写（错误）:
+(标签)(标签)(标签)所有话堆在一起。
 
-## 让声音像真人的关键技巧
+记住：写完一个标签和它对应的句子后，再写下一个标签。一个标签管一句话。
 
-1. **加入呼吸声**: 句间插入(深呼吸)、(叹气)、(吸气)，真人说话不会一口气说完
-2. **加入语气词**: 嗯、呃、那个、就是说、你知道吗、说真的、哎呀
-3. **加入笑声和小声音**: (轻笑)、(哼)、(哎呀)、(清嗓子)、(小声嘀咕)
-4. **句子长短交替**: 不要每句话都一样长，有的短促，有的拉长
-5. **说话会自我纠正**: 我是说...、不对不对...、呃其实就是...
-6. **情绪会波动**: 不是平的，会有起伏，有时欲言又止
-7. **用省略号和破折号**: 制造犹豫、思考、拖音的自然感
-8. **口语化不完美**: 不用完整句子，可以用半句、省略主语
+## 让声音像真人的技巧
+
+- 加呼吸声: 句间插入(深呼吸)、(叹气)、(吸气)
+- 加语气词: 嗯、呃、那个、就是说、你知道吗、哎呀
+- 加笑声: (轻笑)、(苦笑)、(忍不住笑)
+- 句子长短交替，不要每句一样长
+- 说话会自我纠正: 我是说...、不对不对...
+- 用省略号制造犹豫感: 嗯...让我想想...
+- 口语化不完美，可以用半句
 
 规则:
-- 每个标签紧贴对应的句子，不要把所有标签堆在开头
-- 每句至少一个情绪标签，情绪随语义自然变化
 - 标签可组合: (温柔 低语)、(兴奋 语速加快)
-- 行内可插入呼吸/停顿: (停顿)、(叹气)、(深呼吸)
 - 声线切换: (御姐)、(少年)、(萝莉)、(叔音)
-- 回答简洁口语化，2-3句话，适合语音播报"""
+- 回答简洁口语化，2-3句话"""
 
     examples = """
 ## 回复示例（注意：这些示例展示了如何像真人一样说话）
@@ -180,6 +207,8 @@ class ChatBot:
                 temperature=0.7,
             )
             reply = completion.choices[0].message.content
+            # 修正标签堆叠问题
+            reply = fix_stacked_tags(reply)
             self.history.append({"role": "assistant", "content": reply})
             return reply
         except Exception as e:

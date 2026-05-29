@@ -11,7 +11,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;display:flex;overflow:hidden}
 
 /* 左侧导航 */
-.nav-sidebar{width:64px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;flex-shrink:0}
+.nav-sidebar{width:64px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;flex-shrink:0;position:relative;z-index:101}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 8px;border-radius:10px;color:var(--text2);text-decoration:none;font-size:10px;transition:all .15s;cursor:pointer;width:52px}
 .nav-item:hover{background:var(--surface2);color:var(--text)}
 .nav-item.active{background:rgba(108,92,231,.15);color:var(--accent)}
@@ -41,19 +41,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .btn-block{width:100%}
 .row{display:flex;gap:8px;align-items:center}
 .row input{flex:1}
-.voice-list{display:flex;flex-direction:column;gap:4px}
-.voice-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid transparent;transition:all .15s}
-.voice-item:hover{background:var(--surface2)}
-.voice-item.active{border-color:var(--accent);background:rgba(108,92,231,.1)}
-.voice-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.voice-item .v-info{flex:1;min-width:0}
-.voice-item .v-name{font-size:13px;font-weight:500}
-.voice-item .v-meta{font-size:11px;color:var(--text2)}
-.voice-item .v-actions{display:flex;gap:2px;flex-shrink:0}
-.btn-ghost{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:14px;cursor:pointer}
-.btn-ghost:hover{color:var(--yellow)}
-.btn-danger{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:12px;cursor:pointer}
-.btn-danger:hover{color:var(--red)}
 .tip{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5}
 .msg{padding:8px 12px;border-radius:8px;font-size:13px;margin-top:8px;display:none}
 .msg.ok{background:rgba(0,184,148,.1);color:var(--green);display:block}
@@ -63,6 +50,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .audio-bar .audio-progress{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;position:relative;overflow:hidden}
 .audio-bar .audio-progress .audio-fill{height:100%;background:var(--accent2);border-radius:2px;width:0%}
 .audio-bar .audio-time{font-size:11px;color:var(--text2);flex-shrink:0;min-width:36px;text-align:right}
+
+/* Tab 切换 */
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border-radius:var(--radius);padding:4px;border:1px solid var(--border)}
+.tab{flex:1;padding:10px;border:none;background:transparent;color:var(--text2);font-size:14px;font-weight:500;border-radius:8px;cursor:pointer;transition:all .15s;text-align:center}
+.tab.active{background:var(--accent);color:#fff}
+.tab:not(.active):hover{background:var(--surface2)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* 音色列表 */
+.voice-list{display:flex;flex-direction:column;gap:4px}
+.voice-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid transparent;transition:all .15s}
+.voice-item:hover{background:var(--surface2)}
+.voice-item.active{border-color:var(--accent);background:rgba(108,92,231,.1)}
+.voice-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.voice-item .v-info{flex:1;min-width:0}
+.voice-item .v-name{font-size:13px;font-weight:500}
+.voice-item .v-meta{font-size:11px;color:var(--text2)}
+.voice-item .v-actions{display:flex;gap:2px;flex-shrink:0;align-items:center}
+.btn-ghost{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:14px;cursor:pointer}
+.btn-ghost:hover{color:var(--yellow)}
+.btn-danger{background:transparent;color:var(--text2);border:none;padding:4px 6px;font-size:12px;cursor:pointer}
+.btn-danger:hover{color:var(--red)}
+.btn-try{background:transparent;color:var(--accent);border:none;padding:4px 8px;font-size:12px;cursor:pointer;border-radius:6px;transition:all .15s}
+.btn-try:hover{background:rgba(108,92,231,.15)}
 
 @media(max-width:768px){
   .nav-sidebar{width:52px;padding:8px 0}
@@ -81,66 +93,76 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 <!-- 左侧导航栏 -->
 <nav class="nav-sidebar">
-  <a href="/" class="nav-item">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    <span>聊天</span>
-  </a>
   <a href="/voices" class="nav-item active">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg>
     <span>音色</span>
   </a>
   <div class="nav-spacer"></div>
+  <a href="/" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h4"/></svg>
+    <span>会话</span>
+  </a>
 </nav>
 
 <!-- 主内容 -->
 <div class="main">
   <div class="content">
     <div class="content-inner">
+      <!-- Tab 切换 -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('clone')">声音克隆</button>
+        <button class="tab" onclick="switchTab('design')">声音设计</button>
+      </div>
+
       <!-- 声音克隆 -->
-      <div class="card">
-        <h2><span class="icon">&#127908;</span> 声音克隆</h2>
-        <div class="field">
-          <label>上传参考音频 (mp3/wav)</label>
-          <input type="file" id="cloneFile" accept=".mp3,.wav">
-        </div>
-        <div class="field">
-          <label>试听文本</label>
-          <input type="text" id="cloneText" placeholder="输入要试听的文本" value="你好，这是声音克隆的试听效果，听起来怎么样？">
-        </div>
-        <div class="field">
-          <label>音色名称</label>
-          <div class="row">
-            <input type="text" id="cloneName" placeholder="给这个音色起个名字">
-            <button class="btn btn-primary btn-sm" id="btnSaveClone">保存</button>
+      <div class="tab-panel active" id="panelClone">
+        <div class="card">
+          <h2><span class="icon">&#127908;</span> 声音克隆</h2>
+          <div class="field">
+            <label>上传参考音频 (mp3/wav)</label>
+            <input type="file" id="cloneFile" accept=".mp3,.wav">
           </div>
+          <div class="field">
+            <label>试听文本</label>
+            <input type="text" id="cloneText" placeholder="输入要试听的文本" value="你好，这是声音克隆的试听效果，听起来怎么样？">
+          </div>
+          <div class="field">
+            <label>音色名称</label>
+            <div class="row">
+              <input type="text" id="cloneName" placeholder="给这个音色起个名字">
+              <button class="btn btn-primary btn-sm" id="btnSaveClone">保存</button>
+            </div>
+          </div>
+          <button class="btn btn-outline btn-block" id="btnPreviewClone">试听克隆效果</button>
+          <div class="tip">建议: 10-30秒清晰单人音频，wav格式效果更佳</div>
+          <div class="msg" id="cloneMsg"></div>
+          <div id="cloneAudio"></div>
         </div>
-        <button class="btn btn-outline btn-block" id="btnPreviewClone">试听克隆效果</button>
-        <div class="tip">建议: 10-30秒清晰单人音频，wav格式效果更佳</div>
-        <div class="msg" id="cloneMsg"></div>
-        <div id="cloneAudio"></div>
       </div>
 
       <!-- 声音设计 -->
-      <div class="card">
-        <h2><span class="icon">&#9999;</span> 声音设计</h2>
-        <div class="field">
-          <label>用文字描述你想要的声音</label>
-          <input type="text" id="voiceDesc" placeholder="如: 年轻女性，温柔甜美，语速稍慢">
-        </div>
-        <div class="field">
-          <label>音色名称</label>
-          <div class="row">
-            <input type="text" id="designName" placeholder="给这个音色起个名字">
-            <button class="btn btn-primary btn-sm" id="btnSaveDesign">保存</button>
+      <div class="tab-panel" id="panelDesign">
+        <div class="card">
+          <h2><span class="icon">&#9999;</span> 声音设计</h2>
+          <div class="field">
+            <label>用文字描述你想要的声音</label>
+            <input type="text" id="voiceDesc" placeholder="如: 年轻女性，温柔甜美，语速稍慢">
           </div>
+          <div class="field">
+            <label>试听文本</label>
+            <input type="text" id="designText" placeholder="输入要合成的文本" value="你好，很高兴认识你！">
+          </div>
+          <div class="field">
+            <label>音色名称</label>
+            <div class="row">
+              <input type="text" id="designName" placeholder="给这个音色起个名字">
+              <button class="btn btn-primary btn-sm" id="btnSaveDesign">保存</button>
+            </div>
+          </div>
+          <button class="btn btn-outline btn-block" id="btnPreviewDesign">试听声音设计</button>
+          <div class="msg" id="designMsg"></div>
+          <div id="designAudio"></div>
         </div>
-        <div class="field">
-          <label>试听文本</label>
-          <input type="text" id="designText" placeholder="输入要合成的文本" value="你好，很高兴认识你！">
-        </div>
-        <button class="btn btn-outline btn-block" id="btnPreviewDesign">试听声音设计</button>
-        <div class="msg" id="designMsg"></div>
-        <div id="designAudio"></div>
       </div>
 
       <!-- 已保存的音色 -->
@@ -149,13 +171,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
         <div class="voice-list" id="voiceList">
           {% for v in voices %}
           {% if v.type == 'clone' or v.type == 'design' %}
-          <div class="voice-item {% if v.id == default_voice %}active{% endif %}" data-id="{{ v.id }}">
+          <div class="voice-item {% if v.id == default_voice %}active{% endif %}" data-id="{{ v.id }}" data-type="{{ v.type }}" data-name="{{ v.name }}">
             <div class="dot" style="background:{% if v.type == 'design' %}var(--green){% else %}var(--yellow){% endif %}"></div>
             <div class="v-info">
               <div class="v-name">{{ v.name }}</div>
               <div class="v-meta">{% if v.type == 'design' %}声音设计{% else %}声音克隆{% endif %}{% if v.id == default_voice %} · 默认{% endif %}</div>
             </div>
             <div class="v-actions">
+              <button class="btn-try" onclick="tryVoice('{{ v.id }}', '{{ v.type }}', '{{ v.name }}')" title="试听">&#9654;</button>
               <button class="btn-ghost" onclick="setDefault('{{ v.id }}')" title="设为默认">&#9733;</button>
               <button class="btn-danger" onclick="deleteVoice('{{ v.id }}')" title="删除">&#10005;</button>
             </div>
@@ -164,6 +187,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
           {% endfor %}
         </div>
         <div class="tip" id="noVoice" {% if voices|selectattr('type','equalto','clone')|list|length > 0 or voices|selectattr('type','equalto','design')|list|length > 0 %}style="display:none"{% endif %}>暂无自定义音色，使用上方功能创建</div>
+        <div class="msg" id="voiceMsg"></div>
+        <div id="voiceAudio"></div>
       </div>
     </div>
   </div>
@@ -171,6 +196,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 <script>
 const $ = s => document.querySelector(s);
+
+// ---- Tab 切换 ----
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (tab === 'clone' && i === 0) || (tab === 'design' && i === 1)));
+  document.getElementById('panelClone').classList.toggle('active', tab === 'clone');
+  document.getElementById('panelDesign').classList.toggle('active', tab === 'design');
+}
 
 function showMsg(id, text, ok) {
   const el = $('#' + id);
@@ -327,6 +359,8 @@ function addVoiceItem(id, name, type) {
   const div = document.createElement('div');
   div.className = 'voice-item';
   div.dataset.id = id;
+  div.dataset.type = type;
+  div.dataset.name = name;
   div.innerHTML = `
     <div class="dot" style="background:${type === 'design' ? 'var(--green)' : 'var(--yellow)'}"></div>
     <div class="v-info">
@@ -334,11 +368,29 @@ function addVoiceItem(id, name, type) {
       <div class="v-meta">${type === 'design' ? '声音设计' : '声音克隆'}</div>
     </div>
     <div class="v-actions">
+      <button class="btn-try" onclick="tryVoice('${id}', '${type}', '${name}')" title="试听">&#9654;</button>
       <button class="btn-ghost" onclick="setDefault('${id}')" title="设为默认">&#9733;</button>
       <button class="btn-danger" onclick="deleteVoice('${id}')" title="删除">&#10005;</button>
     </div>
   `;
   $('#voiceList').appendChild(div);
+}
+
+async function tryVoice(id, type, name) {
+  showMsg('voiceMsg', '正在试听 "' + name + '"...', true);
+  try {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text: '你好，我是' + name + '，很高兴认识你！', voice: id})
+    });
+    if (res.ok) {
+      addAudioPlayer($('#voiceAudio'), URL.createObjectURL(await res.blob()));
+      showMsg('voiceMsg', '试听 "' + name + '"', true);
+    } else {
+      showMsg('voiceMsg', (await res.json()).error || '试听失败', false);
+    }
+  } catch (e) { showMsg('voiceMsg', e.message, false); }
 }
 
 async function setDefault(id) {
@@ -353,10 +405,11 @@ async function setDefault(id) {
       document.querySelectorAll('.voice-item').forEach(v => {
         v.classList.toggle('active', v.dataset.id === id);
         const meta = v.querySelector('.v-meta');
+        const typeText = v.dataset.type === 'design' ? '声音设计' : '声音克隆';
         if (v.dataset.id === id) {
-          if (!meta.textContent.includes('默认')) meta.textContent += ' · 默认';
+          if (!meta.textContent.includes('默认')) meta.textContent = typeText + ' · 默认';
         } else {
-          meta.textContent = meta.textContent.replace(' · 默认', '');
+          meta.textContent = typeText;
         }
       });
     }

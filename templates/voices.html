@@ -104,6 +104,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
           <input type="file" id="cloneFile" accept=".mp3,.wav">
         </div>
         <div class="field">
+          <label>试听文本</label>
+          <input type="text" id="cloneText" placeholder="输入要试听的文本" value="你好，这是声音克隆的试听效果，听起来怎么样？">
+        </div>
+        <div class="field">
           <label>音色名称</label>
           <div class="row">
             <input type="text" id="cloneName" placeholder="给这个音色起个名字">
@@ -225,7 +229,7 @@ $('#btnPreviewClone').addEventListener('click', async () => {
   $('#btnPreviewClone').textContent = '合成中...';
   showMsg('cloneMsg', '正在合成...', true);
 
-  const text = '你好，这是声音克隆的试听效果，听起来怎么样？';
+  const text = $('#cloneText').value.trim() || '你好，这是声音克隆的试听效果，听起来怎么样？';
   const form = new FormData();
   form.append('text', text);
   form.append('style', '用自然真实的语气说话');

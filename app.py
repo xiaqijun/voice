@@ -9,6 +9,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 from openai import OpenAI
 from xiaomi_tts import XiaomiTTS
 from chat_bot import ChatBot, SimpleChatBot
+from session_store import SessionStore
 import config
 
 app = Flask(__name__)
@@ -16,6 +17,7 @@ app = Flask(__name__)
 # 全局实例
 tts = None
 chat_bot = None
+session_store = None
 
 VOICES_DIR = os.path.join(os.path.dirname(__file__), "voices")
 VOICES_META = os.path.join(VOICES_DIR, "voices.json")
@@ -75,13 +77,22 @@ def _set_default_voice(voice_id):
 
 
 def init_api():
-    global tts, chat_bot
+    global tts, chat_bot, session_store
+    session_store = SessionStore()
     if config.MIMO_API_KEY != "your_api_key_here":
         tts = XiaomiTTS()
-        chat_bot = ChatBot()
+        chat_bot = ChatBot(session_store=session_store)
     else:
         tts = None
         chat_bot = SimpleChatBot()
+
+
+@app.before_request
+def ensure_session():
+    """确保每个请求都有有效的 session_id"""
+    if request.path.startswith("/api/") and request.path not in ("/api/sessions",):
+        session_id = request.cookies.get("session_id")
+        g.session_id = session_store.get_or_create(session_id)
 
 
 @app.route("/")
@@ -170,11 +181,15 @@ def api_chat():
     if not message:
         return jsonify({"error": "消息不能为空"}), 400
 
-    reply = chat_bot.chat(message, voice_context=voice_context)
+    session_id = getattr(g, "session_id", None)
+    reply = chat_bot.chat(message, session_id=session_id, voice_context=voice_context)
     if reply is None:
         return jsonify({"error": "对话请求失败"}), 500
 
-    return jsonify({"reply": reply})
+    resp = jsonify({"reply": reply})
+    if session_id and request.cookies.get("session_id") != session_id:
+        resp.set_cookie("session_id", session_id, max_age=30*24*3600, httponly=True, samesite="Lax")
+    return resp
 
 
 @app.route("/api/tts", methods=["POST"])
@@ -358,8 +373,39 @@ def api_asr():
 
 @app.route("/api/clear", methods=["POST"])
 def api_clear():
-    chat_bot.clear_history()
+    session_id = getattr(g, "session_id", None)
+    chat_bot.clear_history(session_id=session_id)
     return jsonify({"ok": True})
+
+
+@app.route("/api/sessions", methods=["GET"])
+def api_list_sessions():
+    """列出所有会话"""
+    sessions = session_store.list_sessions()
+    return jsonify({"sessions": sessions})
+
+
+@app.route("/api/sessions", methods=["POST"])
+def api_create_session():
+    """新建会话"""
+    session_id = session_store.create_session()
+    resp = jsonify({"ok": True, "session_id": session_id})
+    resp.set_cookie("session_id", session_id, max_age=30*24*3600, httponly=True, samesite="Lax")
+    return resp
+
+
+@app.route("/api/sessions/<session_id>", methods=["DELETE"])
+def api_delete_session(session_id):
+    """删除会话"""
+    session_store.delete_session(session_id)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/sessions/<session_id>/messages", methods=["GET"])
+def api_get_messages(session_id):
+    """获取会话历史消息"""
+    messages = session_store.get_history(session_id, limit=50)
+    return jsonify({"messages": messages})
 
 
 @app.route("/api/skill/reload", methods=["POST"])

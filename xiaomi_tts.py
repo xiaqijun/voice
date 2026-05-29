@@ -2,6 +2,7 @@
 
 import os
 import base64
+import tempfile
 from typing import Optional
 from openai import OpenAI
 import numpy as np
@@ -104,6 +105,43 @@ class XiaomiTTS:
         self.voice = voice
 
     # ---- 声音克隆 ----
+
+    def _preprocess_audio(self, voice_path: str) -> str:
+        """预处理参考音频：时长校验 + 音量归一化 + 格式统一
+
+        Returns:
+            处理后的临时 WAV 文件路径
+        """
+        data, sr = sf.read(voice_path)
+        duration = len(data) / sr
+
+        # 时长校验
+        if duration < 3:
+            print(f"[clone] 参考音频仅 {duration:.1f}s，建议 10-30s 以获得最佳效果")
+        elif duration > 60:
+            print(f"[clone] 参考音频 {duration:.1f}s 过长，截取前 60s")
+            data = data[:int(60 * sr)]
+        elif duration > 30:
+            print(f"[clone] 参考音频 {duration:.1f}s，建议 10-30s 效果更佳")
+
+        # 多声道转单声道
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+
+        # 音量归一化到 -1dB
+        peak = abs(data).max()
+        if peak > 0:
+            data = data * (10 ** (-1 / 20)) / peak
+
+        # 转为 16kHz 单声道 WAV
+        if sr != 16000:
+            from scipy.signal import resample
+            num_samples = int(len(data) * 16000 / sr)
+            data = resample(data, num_samples)
+
+        tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+        sf.write(tmp.name, data, 16000)
+        return tmp.name
 
     def _load_voice_sample(self, voice_path: str) -> str:
         """加载音频样本并转为 data:audio/mpeg;base64,... 格式"""

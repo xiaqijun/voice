@@ -59,27 +59,46 @@ def fix_stacked_tags(text: str) -> str:
     检测模式: (tag1)(tag2)(tag3)句子1。句子2。句子3。
     修正为: (tag1)句子1。(tag2)句子2。(tag3)句子3。
     """
-    # 匹配开头连续的标签 + 后面的句子
+    # 匹配开头连续的标签
     pattern = r'^(\([^)]+\)\s*){2,}'
     if not re.match(pattern, text):
-        return text  # 没有堆叠，原样返回
+        return text
 
     # 提取所有标签
     tags = re.findall(r'\(([^)]+)\)', text)
     # 去掉标签部分，提取剩余文本
-    remaining = re.sub(r'^(\([^)]+\)\s*)+', '', text)
-    # 按句号/感叹号/问号分句
-    sentences = re.split(r'(?<=[。！？\n])', remaining)
-    sentences = [s.strip() for s in sentences if s.strip()]
+    remaining = re.sub(r'^(\([^)]+\)\s*)+', '', text).strip()
 
-    if len(tags) != len(sentences):
-        # 标签和句子数量不匹配，无法修正，原样返回
+    if not remaining:
         return text
 
-    # 重新组合
+    # 按中文标点分句（包括~）
+    sentences = re.split(r'(?<=[。！？~\n])', remaining)
+    sentences = [s.strip() for s in sentences if s.strip()]
+
+    # 如果最后一个没标点结尾，也要算一句
+    if remaining and not re.search(r'[。！？~\n]$', remaining):
+        # 检查最后一段是否已经在sentences里
+        last_part = remaining
+        for s in sentences:
+            last_part = last_part.replace(s, '', 1)
+        last_part = last_part.strip()
+        if last_part:
+            sentences.append(last_part)
+
+    if not sentences:
+        return text
+
+    # 标签多于句子时，合并多余标签到最后一个句子
+    # 标签少于句子时，复用最后一个标签
     parts = []
-    for tag, sentence in zip(tags, sentences):
+    for i, sentence in enumerate(sentences):
+        if i < len(tags):
+            tag = tags[i]
+        else:
+            tag = tags[-1]  # 复用最后一个标签
         parts.append(f"({tag}){sentence}")
+
     return "".join(parts)
 
 

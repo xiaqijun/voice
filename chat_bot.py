@@ -239,13 +239,13 @@ def build_system_prompt(skill_content: str = None) -> str:
 class ChatBot:
     """小米MiMo对话机器人 (OpenAI兼容格式)"""
 
-    def __init__(self, api_key: str = None, skill_path: str = None):
+    def __init__(self, api_key: str = None, skill_path: str = None, session_store=None):
         self.client = OpenAI(
             api_key=api_key or config.MIMO_API_KEY,
             base_url=config.MIMO_BASE_URL,
         )
         self.model = config.CHAT_MODEL
-        self.history: List[Dict] = []
+        self._store = session_store
         self._loader = SkillLoader(skill_path)
         self._base_prompt = build_system_prompt(None)
         self._last_skill_content = ""
@@ -257,9 +257,13 @@ class ChatBot:
         self._base_prompt = build_system_prompt(None)
         return len(self._base_prompt)
 
-    def chat(self, user_message: str, voice_context: str = None) -> Optional[str]:
+    def chat(self, user_message: str, session_id: str = None, voice_context: str = None) -> Optional[str]:
         """与MiMo对话，按需加载 skill 章节"""
-        self.history.append({"role": "user", "content": user_message})
+        if not session_id:
+            return None
+
+        # 写入用户消息
+        self._store.append_message(session_id, "user", user_message)
 
         # 核心章节常驻 + 关键词匹配高级章节
         skill_content = self._loader.chat_sections(user_message)
@@ -269,8 +273,10 @@ class ChatBot:
         if voice_context:
             system += f"\n\n【用户语音特征】{voice_context}\n请根据用户的语气和情绪，选择相匹配的情绪标签和回复风格。"
 
+        # 从 DB 读取最近 10 条历史
+        history = self._store.get_history(session_id, limit=10)
         messages = [{"role": "system", "content": system}]
-        messages.extend(self.history[-10:])
+        messages.extend(history)
 
         try:
             completion = self.client.chat.completions.create(
@@ -282,15 +288,17 @@ class ChatBot:
             reply = completion.choices[0].message.content
             # 修正标签堆叠问题
             reply = fix_stacked_tags(reply)
-            self.history.append({"role": "assistant", "content": reply})
+            # 写入助手回复
+            self._store.append_message(session_id, "assistant", reply)
             return reply
         except Exception as e:
             print(f"对话请求失败: {e}")
             return None
 
-    def clear_history(self):
+    def clear_history(self, session_id: str = None):
         """清除对话历史"""
-        self.history = []
+        if session_id and self._store:
+            self._store.clear_session(session_id)
 
 
 class SimpleChatBot:

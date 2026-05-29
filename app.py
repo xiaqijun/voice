@@ -5,7 +5,7 @@ import json
 import uuid
 import base64
 import tempfile
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, g
 from openai import OpenAI
 from xiaomi_tts import XiaomiTTS
 from chat_bot import ChatBot, SimpleChatBot

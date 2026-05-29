@@ -9,48 +9,90 @@ import config
 # Skill 文件路径
 SKILL_PATH = os.path.join(os.path.dirname(__file__), ".claude", "skills", "tts-style-generator.md")
 
-
-# ChatBot 需要读取的 skill 章节
-REQUIRED_SECTIONS = [
-    "快速参考：标签体系",
-    "声线变体速查",
+# 核心章节 — 每次聊天都加载（保证基础 TTS 质量）
+_CORE_SECTIONS = [
+    "MiMo TTS 标签体系",
     "情绪-语速-共鸣映射",
-    "常见错误",
+    "语音文案写作",
+    "让声音更像真人的技巧",
     "表达原则",
+    "常见错误",
 ]
 
+# 高级章节 — 仅在命中关键词时加载
+_EXTRA_KEYWORDS = {
+    "导演模式": ["导演", "角色扮演", "角色设定"],
+    "声线变体库": ["声线", "变体", "御姐", "正太", "萝莉", "叔音", "少年音", "成熟女性"],
+    "声线三要素": ["三要素", "音色基底", "演绎方式"],
+    "声音设计": ["声音设计", "VoiceDesign", "设计音色", "描述声音"],
+    "声音克隆": ["克隆", "clone", "音色克隆", "参考音频"],
+}
 
-def load_skill_sections(skill_path: str = None, sections: list = None) -> str:
-    """从 skill .md 文件中按章节标题提取指定内容"""
-    path = skill_path or SKILL_PATH
-    if not os.path.exists(path):
-        return ""
-    with open(path, "r", encoding="utf-8") as f:
-        content = f.read()
-    # 去掉 YAML frontmatter
-    content = re.sub(r"^---\n.*?\n---\n", "", content, flags=re.DOTALL)
 
-    target_sections = sections or REQUIRED_SECTIONS
-    result_parts = []
-    current_section = None
-    current_lines = []
+class SkillLoader:
+    """懒加载 Skill 文件，按需提取章节并缓存"""
 
-    for line in content.split("\n"):
-        # 检测二级标题
-        if line.startswith("## "):
-            # 保存上一个匹配的章节
-            if current_section and current_section in target_sections:
-                result_parts.append("\n".join(current_lines))
-            current_section = line[3:].strip()
-            current_lines = [line]
-        elif current_section:
-            current_lines.append(line)
+    def __init__(self, skill_path: str = None):
+        self.path = skill_path or SKILL_PATH
+        self._mtime = 0.0
+        self._sections: Dict[str, str] = {}  # 章节名 → 内容
+        self._all_names: List[str] = []
 
-    # 保存最后一个章节
-    if current_section and current_section in target_sections:
-        result_parts.append("\n".join(current_lines))
+    def _read_and_parse(self) -> None:
+        """读取文件并解析为独立章节缓存"""
+        if not os.path.exists(self.path):
+            return
+        mtime = os.path.getmtime(self.path)
+        if mtime == self._mtime:
+            return
+        with open(self.path, "r", encoding="utf-8") as f:
+            content = f.read()
+        content = re.sub(r"^---\n.*?\n---\n", "", content, flags=re.DOTALL)
 
-    return "\n\n".join(result_parts)
+        sections: Dict[str, str] = {}
+        current_name = None
+        current_lines: List[str] = []
+        for line in content.split("\n"):
+            if line.startswith("## "):
+                if current_name:
+                    sections[current_name] = "\n".join(current_lines)
+                current_name = line[3:].strip()
+                current_lines = [line]
+            elif current_name:
+                current_lines.append(line)
+        if current_name:
+            sections[current_name] = "\n".join(current_lines)
+
+        self._sections = sections
+        self._all_names = list(sections.keys())
+        self._mtime = mtime
+
+    def get_sections(self, names: List[str]) -> str:
+        """按章节名列表提取内容"""
+        self._read_and_parse()
+        parts = [self._sections[n] for n in names if n in self._sections]
+        return "\n\n".join(parts)
+
+    def get_all(self) -> str:
+        """返回所有章节内容"""
+        self._read_and_parse()
+        return "\n\n".join(self._sections.values())
+
+    def chat_sections(self, text: str) -> str:
+        """构建聊天用的 skill 内容：核心章节 + 关键词匹配的高级章节"""
+        self._read_and_parse()
+        names = list(_CORE_SECTIONS)
+        text_lower = text.lower()
+        for section_name, keywords in _EXTRA_KEYWORDS.items():
+            if section_name in self._sections and any(kw in text_lower for kw in keywords):
+                names.append(section_name)
+        return self.get_sections(names)
+
+    def reload(self) -> None:
+        """强制重新加载"""
+        self._mtime = 0.0
+        self._sections.clear()
+        self._read_and_parse()
 
 
 def fix_stacked_tags(text: str) -> str:
@@ -191,27 +233,26 @@ class ChatBot:
         )
         self.model = config.CHAT_MODEL
         self.history: List[Dict] = []
-        self.skill_path = skill_path
-        self._system_prompt = None
-        self.load_skill()
-
-    def load_skill(self):
-        """从 skill 文件加载系统提示词"""
-        content = load_skill_sections(self.skill_path)
-        self._system_prompt = build_system_prompt(content)
-        source = "skill文件" if content else "内置默认"
-        print(f"[ChatBot] 系统提示词已加载 (来源: {source}, {len(self._system_prompt)}字)")
+        self._loader = SkillLoader(skill_path)
+        self._base_prompt = build_system_prompt(None)
+        self._last_skill_content = ""
+        print(f"[ChatBot] 已就绪 (按需加载模式)")
 
     def reload_skill(self):
-        """按需重新加载 skill"""
-        self.load_skill()
-        return len(self._system_prompt)
+        """强制重新加载 skill 文件"""
+        self._loader.reload()
+        self._base_prompt = build_system_prompt(None)
+        return len(self._base_prompt)
 
     def chat(self, user_message: str, voice_context: str = None) -> Optional[str]:
-        """与MiMo对话"""
+        """与MiMo对话，按需加载 skill 章节"""
         self.history.append({"role": "user", "content": user_message})
 
-        system = self._system_prompt
+        # 核心章节常驻 + 关键词匹配高级章节
+        skill_content = self._loader.chat_sections(user_message)
+        self._last_skill_content = skill_content
+
+        system = build_system_prompt(skill_content)
         if voice_context:
             system += f"\n\n【用户语音特征】{voice_context}\n请根据用户的语气和情绪，选择相匹配的情绪标签和回复风格。"
 

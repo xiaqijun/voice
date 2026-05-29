@@ -16,7 +16,7 @@
 
 ## 设计
 
-### 模块 1：音频预处理
+### 模块 1：智能音频预处理
 
 **文件**: `xiaomi_tts.py`
 
@@ -25,12 +25,23 @@
 1. **读取音频**：通过 soundfile 读取（MP3 需要 ffmpeg backend）
 2. **时长校验**：
    - < 3 秒：打印警告 `[clone] 参考音频仅 {n}s，建议 10-30s`
-   - > 60 秒：打印警告 `[clone] 参考音频 {n}s 过长，建议 10-30s`，截取前 60 秒
-   - 不拦截，只警告（模型本身能处理各种长度）
-3. **音量归一化**：peak normalize 到 -1dB（避免音量太小导致克隆效果差）
-4. **格式统一**：转为 16kHz 单声道 WAV，保存到临时文件返回路径
+   - > 60 秒：触发智能裁剪流程
+   - 3-30 秒：直接进入归一化步骤（最佳范围）
+   - 30-60 秒：可选裁剪，打印提示
+3. **智能裁剪**（仅音频 > 30 秒时触发）：
+   - 将音频发送给 MiMo-v2.5（音频理解模型），提示词：
+     ```
+     请分析这段语音音频，找出音质最好、最清晰、情绪最稳定的连续片段。
+     输出格式：start_seconds-end_seconds（如 15.2-42.8）
+     要求：片段时长 15-30 秒，避开开头和结尾的杂音/停顿/背景噪音。
+     ```
+   - 模型返回时间戳区间，系统按此裁剪
+   - 模型调用失败时 fallback 到取中间 25 秒
+4. **音量归一化**：peak normalize 到 -1dB（避免音量太小导致克隆效果差）
+5. **格式统一**：转为 16kHz 单声道 WAV，保存到临时文件返回路径
 
 **依赖**：服务器安装 ffmpeg（`apt install ffmpeg`），soundfile 通过 ffmpeg backend 读 MP3。
+**API 开销**：智能裁剪仅在音频 > 30 秒时触发一次，增加约 2-3 秒延迟，后续合成不再调用。
 
 ### 模块 2：base64 缓存
 
@@ -61,7 +72,7 @@ self._voice_cache: Dict[str, tuple] = {}  # {voice_path: (mtime, base64_str)}
 
 | 文件 | 改动 |
 |------|------|
-| `xiaomi_tts.py` | 新增 `_preprocess_audio()`，修改 `_load_voice_sample()` 加缓存 |
+| `xiaomi_tts.py` | 新增 `_preprocess_audio()`（含智能裁剪）、修改 `_load_voice_sample()` 加缓存 |
 | `templates/voices.html` | 试听文本改为可编辑输入框 |
 | `deploy.py` | 服务器安装 ffmpeg |
 
@@ -73,7 +84,6 @@ self._voice_cache: Dict[str, tuple] = {}  # {voice_path: (mtime, base64_str)}
 
 ## 不做的事
 
-- 不做自动裁剪（交给 MiMo 模型处理）
 - 不做降噪（需要额外依赖，收益不确定）
 - 不做前端波形编辑（方案 B 再做）
 - 不做 A/B 对比功能（当前阶段不需要）

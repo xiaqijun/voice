@@ -301,15 +301,21 @@ inputText.addEventListener('keydown', e => {
 // 解析带标签的回复，返回 [{tag, text}, ...]
 function parseTaggedReply(reply) {
   const segments = [];
-  const re = /\(([^)]+)\)\s*([^(\n]*(?:\((?!\))[^(\n]*)*)?/g;
-  let m;
-  let lastEnd = 0;
-  while ((m = re.exec(reply)) !== null) {
-    // 提取标签和紧跟的文本
-    segments.push({tag: m[1], text: m[2] || ''});
-    lastEnd = re.lastIndex;
+  // 用标签分割文本: "(tag1)text1(tag2)text2" -> ["", "tag1", "text1", "tag2", "text2"]
+  const parts = reply.split(/(\([^)]+\))/);
+  let currentTag = null;
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const tagMatch = part.match(/^\(([^)]+)\)$/);
+    if (tagMatch) {
+      currentTag = tagMatch[1];
+    } else if (part.trim()) {
+      segments.push({tag: currentTag, text: part.trim()});
+      currentTag = null;
+    }
   }
-  // 如果没有标签，整段作为无标签文本
+
   if (segments.length === 0 && reply.trim()) {
     segments.push({tag: null, text: reply.trim()});
   }

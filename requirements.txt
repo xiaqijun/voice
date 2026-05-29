@@ -2,4 +2,5 @@ openai>=1.0.0
 pyaudio>=0.2.13
 soundfile>=0.12.0
 numpy>=1.24.0
+scipy>=1.10.0
 flask>=3.0.0

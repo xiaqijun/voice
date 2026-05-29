@@ -189,6 +189,10 @@ def api_tts():
     if not tts:
         return jsonify({"error": "API未配置"}), 500
 
+    # 如果没有指定风格，使用默认的自然人声风格
+    if not style:
+        style = "用自然真实的语气说话，像朋友聊天一样轻松，语速适中，有适当的呼吸感和停顿"
+
     # 判断音色类型
     if voice and voice.startswith("clone_"):
         clones = _load_clone_voices()

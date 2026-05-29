@@ -10,16 +10,47 @@ import config
 SKILL_PATH = os.path.join(os.path.dirname(__file__), ".claude", "skills", "tts-style-generator.md")
 
 
-def load_skill_content(skill_path: str = None) -> str:
-    """读取 skill .md 文件，去掉 YAML frontmatter，返回正文"""
+# ChatBot 需要读取的 skill 章节
+REQUIRED_SECTIONS = [
+    "快速参考：标签体系",
+    "声线变体速查",
+    "情绪-语速-共鸣映射",
+    "常见错误",
+    "表达原则",
+]
+
+
+def load_skill_sections(skill_path: str = None, sections: list = None) -> str:
+    """从 skill .md 文件中按章节标题提取指定内容"""
     path = skill_path or SKILL_PATH
     if not os.path.exists(path):
         return ""
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
-    # 去掉 YAML frontmatter (--- ... ---)
+    # 去掉 YAML frontmatter
     content = re.sub(r"^---\n.*?\n---\n", "", content, flags=re.DOTALL)
-    return content.strip()
+
+    target_sections = sections or REQUIRED_SECTIONS
+    result_parts = []
+    current_section = None
+    current_lines = []
+
+    for line in content.split("\n"):
+        # 检测二级标题
+        if line.startswith("## "):
+            # 保存上一个匹配的章节
+            if current_section and current_section in target_sections:
+                result_parts.append("\n".join(current_lines))
+            current_section = line[3:].strip()
+            current_lines = [line]
+        elif current_section:
+            current_lines.append(line)
+
+    # 保存最后一个章节
+    if current_section and current_section in target_sections:
+        result_parts.append("\n".join(current_lines))
+
+    return "\n\n".join(result_parts)
 
 
 def build_system_prompt(skill_content: str = None) -> str:
@@ -55,9 +86,8 @@ def build_system_prompt(skill_content: str = None) -> str:
     )
 
     if skill_content:
-        return intro + "【TTS风格控制知识库】\n以下是完整的标签体系、声线变体、情绪映射和表达原则，请严格参考：\n\n" + skill_content + "\n\n" + examples
+        return intro + "【TTS风格控制知识库】\n" + skill_content + "\n\n" + examples
     else:
-        # fallback: 硬编码精简版
         fallback = (
             "【标签体系】\n"
             "整体风格: 开心, 悲伤, 生气, 温柔, 活泼, 严肃, 慵懒, 磁性, 低沉, 沙哑, 甜美\n"
@@ -84,7 +114,7 @@ class ChatBot:
 
     def load_skill(self):
         """从 skill 文件加载系统提示词"""
-        content = load_skill_content(self.skill_path)
+        content = load_skill_sections(self.skill_path)
         self._system_prompt = build_system_prompt(content)
         source = "skill文件" if content else "内置默认"
         print(f"[ChatBot] 系统提示词已加载 (来源: {source}, {len(self._system_prompt)}字)")

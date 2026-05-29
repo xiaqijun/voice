@@ -20,6 +20,7 @@ class XiaomiTTS:
         )
         self.model = config.TTS_MODEL
         self.voice = config.TTS_VOICE
+        self._voice_cache: dict = {}  # {voice_path: (mtime, base64_str)}
 
     def synthesize(self, text: str, style: str = None) -> Optional[bytes]:
         """
@@ -205,7 +206,7 @@ class XiaomiTTS:
             os.remove(tmp_in.name)
 
     def _load_voice_sample(self, voice_path: str) -> str:
-        """加载音频样本并转为 data:audio/mpeg;base64,... 格式"""
+        """加载音频样本并转为 data:audio/mpeg;base64,... 格式（带缓存）"""
         if not os.path.exists(voice_path):
             raise FileNotFoundError(f"音频文件不存在: {voice_path}")
 
@@ -215,12 +216,40 @@ class XiaomiTTS:
         if not mime:
             raise ValueError(f"不支持的音频格式: {ext}，仅支持 mp3 和 wav")
 
-        with open(voice_path, "rb") as f:
+        # 检查缓存
+        mtime = os.path.getmtime(voice_path)
+        cache_key = voice_path
+        if cache_key in self._voice_cache:
+            cached_mtime, cached_b64 = self._voice_cache[cache_key]
+            if cached_mtime == mtime:
+                return f"data:{mime};base64,{cached_b64}"
+
+        # 预处理
+        processed_path = None
+        try:
+            processed_path = self._preprocess_audio(voice_path)
+            read_path = processed_path
+            mime = "audio/wav"  # 预处理后统一为 WAV
+        except Exception as e:
+            print(f"[clone] 预处理失败，使用原始文件: {e}")
+            read_path = voice_path
+
+        with open(read_path, "rb") as f:
             audio_bytes = f.read()
 
         b64 = base64.b64encode(audio_bytes).decode("utf-8")
         if len(b64) > 10 * 1024 * 1024:
             raise ValueError("音频样本base64编码后超过10MB限制")
+
+        # 写入缓存
+        self._voice_cache[cache_key] = (mtime, b64)
+
+        # 清理预处理临时文件
+        if processed_path and processed_path != voice_path:
+            try:
+                os.remove(processed_path)
+            except OSError:
+                pass
 
         return f"data:{mime};base64,{b64}"
 

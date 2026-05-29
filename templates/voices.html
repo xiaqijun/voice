@@ -20,8 +20,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 /* 主内容 */
 .main{flex:1;display:flex;overflow:hidden;min-width:0}
-.content{flex:1;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch;min-height:100%}
-.content-inner{max-width:640px;margin:0 auto}
+.content{flex:1;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch;height:100%}
+.content-inner{max-width:640px;margin:0 auto;display:flex;flex-direction:column;min-height:100%}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
 .card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .card h2 .icon{font-size:18px}
@@ -166,7 +166,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
       </div>
 
       <!-- 已保存的音色 -->
-      <div class="card">
+      <div class="card" style="flex:1">
         <h2><span class="icon">&#127925;</span> 已保存的音色</h2>
         <div class="voice-list" id="voiceList">
           {% for v in voices %}
